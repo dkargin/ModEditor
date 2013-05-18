@@ -12,8 +12,9 @@ namespace ModEditor.Controls
 {
     class TabControlEx : TabControl
     {
-        Bitmap iconClose;
-        Bitmap iconOptions;
+
+        Bitmap iconClose = null;
+        //Bitmap iconOptions = null;
         /*
         public Bitmap IconClose
         {

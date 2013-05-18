@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 using WinFormsContentLoading;
 
 namespace ModEditor
@@ -19,61 +20,8 @@ namespace ModEditor
     public partial class MainForm : Form
     {        
         public Ship_Game.Game1 game;
-        public XNAWrap baseGame;
+        public XNAWrap baseGame;        
         
-        /// <summary>
-        /// Mod item, i.e Tech or Device
-        /// </summary>
-        public class ItemBase
-        {
-            public virtual Object getTarget()
-            {
-                return null;
-            }
-            public virtual string getType()
-            {
-                return "unknown";
-            }
-            public virtual void Serialize()
-            {
-            }
-
-            public virtual void PopulateExplorer(ItemExplorer explorer) { }
-            public string name;
-            public TreeNode node;       /// Assigned tree node
-            public TabPage page;        /// Assigned tab page
-        }
-
-        public class ItemSpec<Type> : ItemBase
-        {
-            public Type target;
-
-            public override Object getTarget()
-            {
-                return target;
-            }
-
-            public override string getType()
-            {
-                return "Game." + typeof(Type).Name;
-            }
-
-            public override void PopulateExplorer(ItemExplorer explorer)
-            {
-                explorer.Init<Type>(target);
-            }
-        }
-
-        public class WeaponSpec : ItemSpec<WeaponSpec>
-        {
-            static void FillWorkspaceView(WorkspaceView view, TreeNode root)
-            {
-            }
-            void Serialize()
-            {
-            }
-        }
-
         public class WorkspaceView
         {
             public TreeView treeView;
@@ -82,78 +30,71 @@ namespace ModEditor
 
             public Ship_Game.ModInformation modInfo;
 
+            public List<Workspace.Controller> controllers = new List<Workspace.Controller>();
+
             public WorkspaceView(TreeView treeView)
             {
                 this.treeView = treeView;
                 this.treeView.Nodes.Clear();
-                /*
+                
                 rootBase = new TreeNode("Base");
                 rootMod = new TreeNode("Mod");
 
                 treeView.Nodes.Clear();
                 treeView.Nodes.Add(rootBase);
-                treeView.Nodes.Add(rootMod);*/
+                treeView.Nodes.Add(rootMod);
                 Reset();
+
+                controllers.Add(new Workspace.ArtifactsSpec());
+                controllers.Add(new Workspace.BuildingSpec());
+                controllers.Add(new Workspace.ModuleSpec());
+                controllers.Add(new Workspace.WeaponGroup());
+                controllers.Add(new Workspace.TechSpec());
+                controllers.Add(new Workspace.TroopSpec());
+                /*
+                controllers.Add(new Workspace.TexturesSpec());
+                controllers.Add(new Workspace.ModelsSpec());*/
+
             }
 
             public void Reset()
             {
-                rootBase = null;
-                rootMod = null;
+                rootBase.Nodes.Clear();// = null;
+                rootMod.Nodes.Clear();// = null;
                 modInfo = null;
-                treeView.Nodes.Clear();
-                treeView.Nodes.Add("Load mod to observe data");
+                //treeView.Nodes.Clear();
+                //treeView.Nodes.Add("Load mod to observe data");
             }
 
             public void PopulateData(TreeNodeCollection root)
             {
-                PopulateModOverview(Ship_Game.ResourceManager.ArtifactsDict, "Artifacts", root);
-                PopulateModOverview(Ship_Game.ResourceManager.ShipModulesDict, "Modules", root);
-                PopulateModOverview(Ship_Game.ResourceManager.WeaponsDict, "Weapons", root);
-                PopulateModOverview(Ship_Game.ResourceManager.BuildingsDict, "Buildings", root);
-                PopulateModOverview(Ship_Game.ResourceManager.ModelDict, "Models", root);
-                PopulateModOverview(Ship_Game.ResourceManager.TroopsDict, "Troops", root);                
-                PopulateModOverview(Ship_Game.ResourceManager.TextureDict, "Textures", root);
-                PopulateModOverview(Ship_Game.ResourceManager.TechTree, "Tech", root);
-                PopulateModOverview(Ship_Game.ResourceManager.ModelDict, "Models", root);
-            }
+                /*
+                ModEditor.Workspace.ModuleSpec.PopulateGroup(root);
+                ModEditor.Workspace.ArtifactsSpec.PopulateGroup(root);
+                ModEditor.Workspace.BuildingSpec.PopulateGroup(root);
+                ModEditor.Workspace.WeaponGroup.PopulateGroup(root);
+                ModEditor.Workspace.TechSpec.PopulateGroup(root);
+                ModEditor.Workspace.TroopSpec.PopulateGroup(root);*/
+                foreach (var controller in controllers)
+                {
+                    controller.PopulateModOverview(root);
+                }
 
-            /// <summary>
-            /// Iterate through all items in dictionary and add them to overview
-            /// </summary>
-            /// <typeparam name="Type"></typeparam>
-            /// <param name="data"></param>
-            /// <param name="name"></param>
-            /// <param name="root"></param>
-            public void PopulateModOverview<Type>(Dictionary<string, Type> data, string name, TreeNodeCollection root)
-            {
-                TreeNode[] nodes = root.Find(name, false);
-                TreeNode groupRoot = null;
-                if (nodes != null && nodes.Length > 0)
-                    groupRoot = nodes[0];
-                if (groupRoot == null)
-                {
-                    groupRoot = new TreeNode(name);
-                    root.Add(groupRoot);
-                }
-                groupRoot.Nodes.Clear();
-                foreach (var entry in data)
-                {
-                    TreeNode node = new TreeNode(entry.Key);
-                    ItemSpec<Type> item = new ItemSpec<Type>();
-                    item.name = entry.Key;
-                    item.node = node;
-                    item.target = entry.Value;
-                    
-                    node.Tag = item;
-                    groupRoot.Nodes.Add(node);
-                }
-            }
+                //ItemBase.PopulateModOverview(Ship_Game.ResourceManager.ArtifactsDict, "Artifacts", root);                
+                //PopulateModOverview(Ship_Game.ResourceManager.ShipModulesDict, "Modules", root);
+                
+                //PopulateModOverview(Ship_Game.ResourceManager.WeaponsDict, "Weapons", root);
+                //PopulateModOverview(Ship_Game.ResourceManager.BuildingsDict, "Buildings", root);
+                //PopulateModOverview(Ship_Game.ResourceManager.ModelDict, "Models", root);
+                //PopulateModOverview(Ship_Game.ResourceManager.TroopsDict, "Troops", root);                
+                //PopulateModOverview(Ship_Game.ResourceManager.TextureDict, "Textures", root);
+                //PopulateModOverview(Ship_Game.ResourceManager.TechTree, "Tech", root);               
+            }            
         }
 
         WorkspaceView workspaceView;
 
-        Boolean modReady = false;
+       // Boolean modReady = false;
         public MainForm()
         {            
             InitializeComponent();
@@ -164,6 +105,7 @@ namespace ModEditor
         {
             Empty,
             Loading,
+            Saving,
             Ready,
         }
 
@@ -213,23 +155,25 @@ namespace ModEditor
 
         void UnloadMod()
         {
-            modReady = false;
+            //modReady = false;
             workspaceView.Reset();
             Ship_Game.ResourceManager.Reset();
         }
+
         /// <summary>
-        /// Loads unmodded game data
+        /// Loads base game data
         /// </summary>
         void LoadBaseData()
         {
             try
             {
+                this.statusModPath.Text = "base game data";
                 // 1. Load contents
                 Ship_Game.ResourceManager.Initialize(baseGame.Content);
                 
-                workspaceView.PopulateData(workspaceView.treeView.Nodes);               
+                workspaceView.PopulateData(workspaceView.rootBase.Nodes);               
                 // 2. Analyze contents
-                modReady = true;
+                //modReady = true;
             }
             catch (Exception e)
             {
@@ -238,30 +182,68 @@ namespace ModEditor
             }
         }
 
+        bool LoadModInfo(string ModEntryPath)
+        {
+
+            try
+            {
+                FileInfo FI = new FileInfo(ModEntryPath);
+                Stream file = FI.OpenRead();
+                workspaceView.modInfo = (Ship_Game.ModInformation)Ship_Game.ResourceManager.ModSerializer.Deserialize(file);
+                file.Close();
+                file.Dispose();
+                return true;
+            }
+            catch (Exception e)
+            {
+            }
+            return false;
+        }
+
+        bool SaveModInfo(string ModEntryPath)
+        {
+            try
+            {
+                FileInfo FI = new FileInfo(ModEntryPath);
+                Stream file = FI.OpenWrite();
+                Ship_Game.ResourceManager.ModSerializer.Serialize(file, workspaceView.modInfo);
+                file.Close();
+                file.Dispose();
+                return true;
+            }
+            catch (Exception e)
+            {
+            }
+            return false;
+        }
+
+        void SaveMod(string ModEntryPath)
+        {
+            Status = EditorStatus.Saving;
+            SaveModInfo(ModEntryPath);
+            Status = EditorStatus.Ready;
+        }
+
         void LoadMod(string ModEntryPath)        
         {
             string modRootDirectory = "Mods";// System.IO.Path.GetDirectoryName(ModEntryPath);
             Status = EditorStatus.Empty;            
             UnloadMod();
             Status = EditorStatus.Loading;
+            LoadBaseData();
             this.statusModPath.Text = ModEntryPath;
-           // LoadBaseData();
             try
             {
-
-                FileInfo FI = new FileInfo(ModEntryPath);
-                Stream file = FI.OpenRead();
-                workspaceView.modInfo = (Ship_Game.ModInformation)Ship_Game.ResourceManager.ModSerializer.Deserialize(file);
-                string modDirectory = modRootDirectory + "\\" + Path.GetFileNameWithoutExtension(FI.Name);
-
+                string modDirectory = modRootDirectory + "\\" + Path.GetFileNameWithoutExtension(ModEntryPath);
+                LoadModInfo(ModEntryPath);
                 // 1. Load contents                
                 Ship_Game.ResourceManager.LoadMods(modDirectory);                
                 // 2. Populate treeview
-                workspaceView.treeView.Nodes.Clear();
-                workspaceView.PopulateData(workspaceView.treeView.Nodes);               
+                //workspaceView.treeView.Nodes.Clear();
+                workspaceView.PopulateData(workspaceView.rootMod.Nodes);               
                 //workspaceView.PopulateData(workspaceView.rootMod);
-               
-                modReady = true;
+                workspaceView.rootMod.Name = workspaceView.modInfo.ModName;
+                //modReady = true;
                 Status = EditorStatus.Ready;
             }
             catch (Exception e)
@@ -319,18 +301,27 @@ namespace ModEditor
             return null;
         }
 
-        public void ExploreItem(ItemBase item)
+        /// <summary>
+        /// Order Main UI to show item contents
+        /// </summary>
+        /// <param name="item"></param>
+        public void ExploreItem(ModEditor.Workspace.ItemBase item)
         {
             if (item.page == null)
-            {
-                item.page = new TabPage(item.name);
-                ItemExplorer explorer = new ItemExplorer();
-                explorer.Dock = DockStyle.Fill;
-                item.PopulateExplorer(explorer);   
-                item.page.Controls.Add(explorer);
-                            
-                this.EditorTabs.TabPages.Add(item.page);
-                this.EditorTabs.SelectedTab = item.page;
+            {                
+                Control control = item.GenerateControl();
+                if (control != null)
+                {
+                    item.page = new TabPage(item.name);
+                    //ItemExplorer explorer = new ItemExplorer();
+                    //explorer.Dock = DockStyle.Fill;
+                    //item.PopulateExplorer(explorer);
+                    control.Dock = DockStyle.Fill;
+                    item.page.Controls.Add(control);
+
+                    this.EditorTabs.TabPages.Add(item.page);
+                    this.EditorTabs.SelectedTab = item.page;
+                }
             }
             else
             {
@@ -341,7 +332,7 @@ namespace ModEditor
         private void ModContentsTree_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
             TreeNode selected = e.Node;
-            ItemBase item = selected.Tag as ItemBase;
+            ModEditor.Workspace.ItemBase item = selected.Tag as ModEditor.Workspace.ItemBase;
             if (selected != null && item != null)
             {
                 ExploreItem(item);
@@ -351,6 +342,11 @@ namespace ModEditor
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveMod("testExport.xml");
         }
     }
 }

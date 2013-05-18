@@ -70,6 +70,7 @@
     <Compile Include="Controls\TabHostEx.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Workspace.cs" />
     <Compile Include="XNATool\GraphicsDeviceControl.cs">
       <SubType>Component</SubType>
     </Compile>

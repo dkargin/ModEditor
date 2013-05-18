@@ -10,6 +10,9 @@ namespace ModEditor.Controls
     {
         static public Dictionary<System.Type, Func<System.Reflection.FieldInfo, Object, FieldEditor>> editors = new Dictionary<System.Type, Func<System.Reflection.FieldInfo, object, FieldEditor>>();
 
+        /// <summary>
+        /// Register editors for basic types
+        /// </summary>
         static public void Init()
         {            
             editors.Add(typeof(string), (System.Reflection.FieldInfo field, Object obj) =>
@@ -42,7 +45,12 @@ namespace ModEditor.Controls
                 return new FieldEditorBool(field, obj);
             });
         }
-
+        /// <summary>
+        /// Generate appropriate controll for specified field
+        /// </summary>
+        /// <param name="fieldInfo"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
         static public FieldEditor generateControl(System.Reflection.FieldInfo fieldInfo, Object item)
         {            
             if (fieldInfo.FieldType.IsEnum)
@@ -55,7 +63,7 @@ namespace ModEditor.Controls
             {
                 factory = editors[fieldInfo.FieldType];
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new FieldEditorReadOnly(fieldInfo, item);
             }
