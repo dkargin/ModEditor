@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -16,6 +17,7 @@ namespace ModEditor
         {
             public Controller controller;
             public Object target;
+            public bool modded;
 
             public ItemBase(Object item, Controller controller)
             {
@@ -25,7 +27,7 @@ namespace ModEditor
 
             public virtual bool Modded()
             {
-                return false;
+                return modded;
             }
 
             public virtual Object getTarget()
@@ -60,11 +62,39 @@ namespace ModEditor
             }
             public abstract Control GenerateControl(ItemBase item);
             public abstract void PopulateModOverview(TreeNodeCollection root);
+            public abstract void Save(string dir);
         }
 
         public abstract class ControllerSpec<Target> : Controller
         {
             public abstract Dictionary<string, Target> GetStorage();
+
+            public virtual XmlSerializer GetSerializer()
+            {
+                return new XmlSerializer(typeof(Target));
+            }
+
+            public override void Save(string rootDir)
+            {
+                /// TODO: Serialize only data that changed in MOD
+                XmlSerializer serializer = GetSerializer();
+                if(serializer == null)
+                    return;
+                var data = GetStorage();
+
+                System.IO.Directory.CreateDirectory(rootDir + "/" + GetGroupFolder());
+
+                foreach (var item in data)
+                {
+                    string path = rootDir + "/" + GetGroupFolder() + "/" + item.Key + ".xml";
+                    FileInfo FI = new FileInfo(path);
+                    FileStream stream = FI.OpenWrite();
+                    Target value = item.Value;
+                    serializer.Serialize(stream, value);
+                    stream.Close();
+                    stream.Dispose();
+                }
+            }
 
             public override Control GenerateControl(ItemBase item)
             {
@@ -105,24 +135,11 @@ namespace ModEditor
 
         public class WeaponGroup : ControllerSpec<Ship_Game.Gameplay.Weapon>
         {
-            static XmlSerializer serializer = Ship_Game.ResourceManager.weapon_serializer;
-            static string groupFolder = "Weapons";
-
-            public void Serialize(string modPath)
+            public override XmlSerializer GetSerializer()
             {
-                /*
-                string path = modPath + groupFolder + this.name;
-
-                FileInfo FI = new FileInfo(path);
-                Stream file = FI.OpenWrite();
-                serializer.Serialize(file, target);*/
-            }
-
-            public void WriteAll(string modPath)
-            {
-            }
-
-            #region Static overrides
+                return Ship_Game.ResourceManager.weapon_serializer;
+            }           
+            
             public override Dictionary<string, Ship_Game.Gameplay.Weapon> GetStorage()
             {
                 return Ship_Game.ResourceManager.WeaponsDict;
@@ -132,13 +149,10 @@ namespace ModEditor
             {
                 return "Weapons";
             }            
-            #endregion
-
         }
 
         public class TechSpec : ControllerSpec<Ship_Game.Technology>
-        {
-            #region Static overrides
+        {            
             override public Dictionary<string, Ship_Game.Technology> GetStorage()
             {
                 return Ship_Game.ResourceManager.TechTree;
@@ -149,12 +163,10 @@ namespace ModEditor
                 return "Technology";
             }
 
-            #endregion
         }
 
         public class TroopSpec : ControllerSpec<Ship_Game.Troop>
         {
-            #region Static overrides
             override public Dictionary<string, Ship_Game.Troop> GetStorage()
             {
                 return Ship_Game.ResourceManager.TroopsDict;
@@ -164,13 +176,10 @@ namespace ModEditor
             {
                 return "Troops";
             }
-
-            #endregion
         }
 
         public class BuildingSpec : ControllerSpec<Ship_Game.Building>
         {
-            #region Static overrides
             override public Dictionary<string, Ship_Game.Building> GetStorage()
             {
                 return Ship_Game.ResourceManager.BuildingsDict;
@@ -180,8 +189,6 @@ namespace ModEditor
             {
                 return "Buildings";
             }
-            
-            #endregion
         }
 
         public class ArtifactsSpec : ControllerSpec<Ship_Game.Artifact>
@@ -202,7 +209,12 @@ namespace ModEditor
 
         public class ModuleSpec : ControllerSpec<Ship_Game.Gameplay.ShipModule>
         {
-            #region Static overrides
+            /*
+            public override XmlSerializer GetSerializer()
+            {
+                return Ship_Game.ResourceManager.ModSerializer;
+            } */
+
             override public Dictionary<string, Ship_Game.Gameplay.ShipModule> GetStorage()
             {
                 return Ship_Game.ResourceManager.ShipModulesDict;
@@ -210,10 +222,8 @@ namespace ModEditor
 
             override public string GetGroupFolder()
             {
-                return "Artifacts";
+                return "ShipModules";
             }
-
-            #endregion
         }
     }
 }

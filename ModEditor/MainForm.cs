@@ -220,7 +220,13 @@ namespace ModEditor
         void SaveMod(string ModEntryPath)
         {
             Status = EditorStatus.Saving;
-            SaveModInfo(ModEntryPath);
+            SaveModInfo("Mods/" + ModEntryPath);
+            string outputDir = "Mods/" + System.IO.Path.GetDirectoryName(ModEntryPath) + "\\" + Path.GetFileNameWithoutExtension(ModEntryPath);
+            System.IO.Directory.CreateDirectory(outputDir);
+            foreach (var controller in workspaceView.controllers)
+            {                
+                controller.Save(outputDir);
+            }
             Status = EditorStatus.Ready;
         }
 
