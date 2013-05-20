@@ -30,6 +30,7 @@
         {
             System.Windows.Forms.SplitContainer splitContainer1;
             this.ModContentsTree = new System.Windows.Forms.TreeView();
+            this.EditorTabs = new ModEditor.Controls.TabControlEx();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fILEToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -37,14 +38,13 @@
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.stringsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hELPToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusGeneral = new System.Windows.Forms.ToolStripStatusLabel();
             this.statusModPath = new System.Windows.Forms.ToolStripStatusLabel();
-            this.EditorTabs = new ModEditor.Controls.TabControlEx();
-            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.stringsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             splitContainer1 = new System.Windows.Forms.SplitContainer();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -80,6 +80,17 @@
             this.ModContentsTree.Size = new System.Drawing.Size(233, 433);
             this.ModContentsTree.TabIndex = 3;
             this.ModContentsTree.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.ModContentsTree_NodeMouseClick);
+            // 
+            // EditorTabs
+            // 
+            this.EditorTabs.Appearance = System.Windows.Forms.TabAppearance.FlatButtons;
+            this.EditorTabs.ConfirmOnClose = true;
+            this.EditorTabs.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.EditorTabs.Location = new System.Drawing.Point(0, 0);
+            this.EditorTabs.Name = "EditorTabs";
+            this.EditorTabs.SelectedIndex = 0;
+            this.EditorTabs.Size = new System.Drawing.Size(465, 433);
+            this.EditorTabs.TabIndex = 1;
             // 
             // menuStrip1
             // 
@@ -137,6 +148,20 @@
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
+            // toolsToolStripMenuItem
+            // 
+            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.stringsToolStripMenuItem});
+            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.toolsToolStripMenuItem.Text = "Tools";
+            // 
+            // stringsToolStripMenuItem
+            // 
+            this.stringsToolStripMenuItem.Name = "stringsToolStripMenuItem";
+            this.stringsToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
+            this.stringsToolStripMenuItem.Text = "Strings";
+            // 
             // hELPToolStripMenuItem
             // 
             this.hELPToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -173,31 +198,6 @@
             this.statusModPath.Name = "statusModPath";
             this.statusModPath.Size = new System.Drawing.Size(44, 17);
             this.statusModPath.Text = "no path";
-            // 
-            // EditorTabs
-            // 
-            this.EditorTabs.Appearance = System.Windows.Forms.TabAppearance.FlatButtons;
-            this.EditorTabs.ConfirmOnClose = true;
-            this.EditorTabs.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.EditorTabs.Location = new System.Drawing.Point(0, 0);
-            this.EditorTabs.Name = "EditorTabs";
-            this.EditorTabs.SelectedIndex = 0;
-            this.EditorTabs.Size = new System.Drawing.Size(465, 433);
-            this.EditorTabs.TabIndex = 1;
-            // 
-            // toolsToolStripMenuItem
-            // 
-            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.stringsToolStripMenuItem});
-            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.toolsToolStripMenuItem.Text = "Tools";
-            // 
-            // stringsToolStripMenuItem
-            // 
-            this.stringsToolStripMenuItem.Name = "stringsToolStripMenuItem";
-            this.stringsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.stringsToolStripMenuItem.Text = "Strings";
             // 
             // MainForm
             // 

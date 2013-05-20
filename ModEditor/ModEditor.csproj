@@ -70,7 +70,7 @@
     <Compile Include="Controls\TabHostEx.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Workspace.cs" />
+    <Compile Include="ModContents.cs" />
     <Compile Include="XNATool\GraphicsDeviceControl.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -125,12 +125,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\StarDrive-mod.csproj">
-      <Project>{8161f522-7eeb-47a0-8143-a02ab395eb2a}</Project>
-      <Name>StarDrive-mod</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="Microsoft.Xna.Framework, Version=3.1.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Windows\assembly\GAC_32\Microsoft.Xna.Framework\3.1.0.0__6d5c3888ef60e27d\Microsoft.Xna.Framework.dll</HintPath>
@@ -138,6 +132,10 @@
     <Reference Include="Microsoft.Xna.Framework.Game, Version=3.1.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Windows\assembly\GAC_32\Microsoft.Xna.Framework.Game\3.1.0.0__6d5c3888ef60e27d\Microsoft.Xna.Framework.Game.dll</HintPath>
+    </Reference>
+    <Reference Include="StarDrive-mod, Version=0.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\dist\StarDrive-mod.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
