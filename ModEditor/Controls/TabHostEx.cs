@@ -7,12 +7,15 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace ModEditor.Controls
 {
     class TabControlEx : TabControl
     {
-
+        private readonly VisualStyleElement elementClose;
+        VisualStyleRenderer renderElementClose;
+        
         Bitmap iconClose = null;
         //Bitmap iconOptions = null;
         /*
@@ -40,9 +43,9 @@ namespace ModEditor.Controls
             }
         }*/
 
-        public TabControlEx()
+        public TabControlEx()        
         {
-            
+            elementClose = VisualStyleElement.Window.MdiCloseButton.Normal;
         }
         /// <summary>
         /// override to draw the close button
@@ -57,10 +60,11 @@ namespace ModEditor.Controls
                 {
                     /*if not active draw ,inactive close button*/
                     tabTextArea = (RectangleF)this.GetTabRect(nIndex);
-                    if(iconClose != null)
+                    if (renderElementClose != null)
                     //using(Bitmap bmp = new Bitmap(GetContentFromResource("closeinactive.bmp")))
                     {
-                        e.Graphics.DrawImage(iconClose, tabTextArea.X + tabTextArea.Width - 16, 5, 13, 13);
+                        renderElementClose.DrawBackground(e.Graphics, new Rectangle((int)(tabTextArea.X + tabTextArea.Width) - 16, 5, 13, 13));
+                        //e.Graphics.DrawImage(iconClose, tabTextArea.X + tabTextArea.Width - 16, 5, 13, 13);
                     }
                 }
                 else
@@ -77,8 +81,8 @@ namespace ModEditor.Controls
                     if (iconClose != null)
                     //using(Bitmap bmp = new Bitmap( GetContentFromResource("close.bmp")))
                     {
-                        e.Graphics.DrawImage(iconClose,
-                            tabTextArea.X+tabTextArea.Width -16, 5, 13, 13);
+                        renderElementClose.DrawBackground(e.Graphics, new Rectangle((int)(tabTextArea.X + tabTextArea.Width) - 16, 5, 13, 13));
+                        //e.Graphics.DrawImage(iconClose, tabTextArea.X+tabTextArea.Width -16, 5, 13, 13);
                     }
                     br.Dispose();
                 }
@@ -232,6 +236,15 @@ namespace ModEditor.Controls
             {
                 MessageBox.Show(Ex.Message, "Error Occured",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        protected override void OnCreateControl()
+        {
+            base.OnCreateControl();
+                        
+            if (Application.RenderWithVisualStyles && VisualStyleRenderer.IsElementDefined(elementClose))
+            {
+                renderElementClose = new VisualStyleRenderer(elementClose);
             }
         }
 

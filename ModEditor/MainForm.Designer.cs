@@ -28,11 +28,13 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.Windows.Forms.SplitContainer splitContainer1;
             this.ModContentsTree = new System.Windows.Forms.TreeView();
             this.EditorTabs = new ModEditor.Controls.TabControlEx();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fILEToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadBaseDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -45,6 +47,7 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusGeneral = new System.Windows.Forms.ToolStripStatusLabel();
             this.statusModPath = new System.Windows.Forms.ToolStripStatusLabel();
+            this.GenericObjectsMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             splitContainer1 = new System.Windows.Forms.SplitContainer();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -80,6 +83,7 @@
             this.ModContentsTree.Size = new System.Drawing.Size(233, 433);
             this.ModContentsTree.TabIndex = 3;
             this.ModContentsTree.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.ModContentsTree_NodeMouseClick);
+            this.ModContentsTree.MouseUp += new System.Windows.Forms.MouseEventHandler(this.ModContentsTree_MouseUp);
             // 
             // EditorTabs
             // 
@@ -107,6 +111,7 @@
             // fILEToolStripMenuItem
             // 
             this.fILEToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.loadBaseDataToolStripMenuItem,
             this.openModToolStripMenuItem,
             this.saveToolStripMenuItem,
             this.exportToolStripMenuItem,
@@ -116,35 +121,42 @@
             this.fILEToolStripMenuItem.Size = new System.Drawing.Size(40, 20);
             this.fILEToolStripMenuItem.Text = "FILE";
             // 
+            // loadBaseDataToolStripMenuItem
+            // 
+            this.loadBaseDataToolStripMenuItem.Name = "loadBaseDataToolStripMenuItem";
+            this.loadBaseDataToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
+            this.loadBaseDataToolStripMenuItem.Text = "Load base data";
+            this.loadBaseDataToolStripMenuItem.Click += new System.EventHandler(this.loadBaseDataToolStripMenuItem_Click);
+            // 
             // openModToolStripMenuItem
             // 
             this.openModToolStripMenuItem.Name = "openModToolStripMenuItem";
-            this.openModToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.openModToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.openModToolStripMenuItem.Text = "Open Mod";
             this.openModToolStripMenuItem.Click += new System.EventHandler(this.openModToolStripMenuItem_Click);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.saveToolStripMenuItem.Text = "Save";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // exportToolStripMenuItem
             // 
             this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
-            this.exportToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exportToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.exportToolStripMenuItem.Text = "Export";
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(145, 6);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -199,6 +211,11 @@
             this.statusModPath.Size = new System.Drawing.Size(44, 17);
             this.statusModPath.Text = "no path";
             // 
+            // GenericObjectsMenu
+            // 
+            this.GenericObjectsMenu.Name = "GenericObjectsMenu";
+            this.GenericObjectsMenu.Size = new System.Drawing.Size(61, 4);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -209,7 +226,7 @@
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
-            this.Text = "StarDrive Mod Builder";
+            this.Text = "StarDrive Mod Editor";
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);
             splitContainer1.ResumeLayout(false);
@@ -240,6 +257,8 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem stringsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem loadBaseDataToolStripMenuItem;
+        private System.Windows.Forms.ContextMenuStrip GenericObjectsMenu;
     }
 }
 

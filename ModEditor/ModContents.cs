@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using System.Xml.Serialization;
 
 namespace ModEditor
@@ -29,6 +31,8 @@ namespace ModEditor
 
         public State state = State.Empty;
 
+        ModInfoController modInfoController = new ModInfoController();
+
         public ModContents(TreeView treeView)
         {
             this.treeView = treeView;
@@ -50,11 +54,12 @@ namespace ModEditor
             AddController(new ModContents.TroopSpec());
             AddController(new ModContents.WeaponGroup());
 
+            AddController(modInfoController);
             AddController(new ModContents.StringsGroup());
             /*
+             * ModInfo
              	Races
 	            Encounters 
-             * Strings
              * ToolTips
              */
         }
@@ -71,7 +76,9 @@ namespace ModEditor
                 FileInfo FI = new FileInfo(ModEntryPath);
                 Stream file = FI.OpenRead();
                 modInfo = (Ship_Game.ModInformation)Ship_Game.ResourceManager.ModSerializer.Deserialize(file);
+                modInfoController.rootItem.target = modInfo;
                 rootTreeNode.Name = modInfo.ModName;
+                rootTreeNode.Text = modInfo.ModName;
                 file.Close();
                 file.Dispose();
                 return true;
@@ -173,7 +180,84 @@ namespace ModEditor
                 controller.UpdateItems();                
             } 
         }
+        #region Tools
 
+        public static FileInfo[] GetFilesFromDirectory(string DirPath)
+        {
+            DirectoryInfo Dir = new DirectoryInfo(DirPath);
+            FileInfo[] result;
+            try
+            {
+                FileInfo[] FileList = Dir.GetFiles("*.*", SearchOption.AllDirectories);
+
+                result = FileList;
+            }
+            catch
+            {
+                result = new FileInfo[0];
+            }
+            return result;
+        }
+
+        public static DirectoryInfo[] GetDirectoriesFromDirectory(string DirPath)
+        {
+            DirectoryInfo Dir = new DirectoryInfo(DirPath);
+            DirectoryInfo[] result;
+            try
+            {
+                DirectoryInfo[] DirList = Dir.GetDirectories();//("*.*", SearchOption.AllDirectories);
+
+                result = DirList;
+            }
+            catch
+            {
+                result = new DirectoryInfo[0];
+            }
+            return result;
+        }
+
+        private const int TVIF_STATE = 0x8;
+        private const int TVIS_STATEIMAGEMASK = 0xF000;
+        private const int TV_FIRST = 0x1100;
+        private const int TVM_SETITEM = TV_FIRST + 63;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Auto)]
+        private struct TVITEM
+        {
+            public int mask;
+            public IntPtr hItem;
+            public int state;
+            public int stateMask;
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string lpszText;
+            public int cchTextMax;
+            public int iImage;
+            public int iSelectedImage;
+            public int cChildren;
+            public IntPtr lParam;
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam,
+                                                 ref TVITEM lParam);
+
+        /// <summary>
+        /// Hides the checkbox for the specified node on a TreeView control.
+        /// </summary>
+        public static void HideCheckBox(TreeNode node)
+        {
+            TreeView tvw = node.TreeView;
+            if (tvw == null)
+                return;
+            TVITEM tvi = new TVITEM();
+            tvi.hItem = node.Handle;
+            tvi.mask = TVIF_STATE;
+            tvi.stateMask = TVIS_STATEIMAGEMASK;
+            tvi.state = 0;
+            SendMessage(tvw.Handle, TVM_SETITEM, IntPtr.Zero, ref tvi);
+            
+        }
+       
         static public string EmbedToString<Type>(string source, Type obj)
         {
             Regex rx = new Regex("\\$\\{(\\w+)\\.(\\w+)\\}"); 
@@ -204,8 +288,9 @@ namespace ModEditor
                 return match.ToString();
             });           
             
-            return result;
+            return result;        
         }
+        #endregion
         /// <summary>
         /// Wraps item, i.e Tech or Device, stores active ui information concerned to selected node
         /// </summary>
@@ -231,6 +316,11 @@ namespace ModEditor
             public virtual Object getTarget()
             {
                 return target;
+            }
+
+            public ContextMenuStrip GenerateContextMenu()
+            {
+                return controller.GenerateContextMenu(this);
             }
 
             public Control GenerateControl()
@@ -263,6 +353,13 @@ namespace ModEditor
         /// </summary>
         public abstract class Controller
         {
+            public ItemBase rootItem;
+            public Controller()
+            {
+                rootItem = new ItemBase(null, this);
+                rootItem.controller = this;
+            }
+
             public virtual ItemBase CreateSpec(Object obj)
             {
                 return new ItemBase(obj, this);
@@ -275,6 +372,10 @@ namespace ModEditor
 
             public abstract void ClearCache();
             public abstract Control GenerateControl(ItemBase item);
+            public virtual ContextMenuStrip GenerateContextMenu(ItemBase item)
+            {
+                return null;
+            }
             public abstract void ObtainModData(bool isBase);
             public abstract void PopulateModOverview(TreeNodeCollection root);
             public abstract void Save(string dir);
@@ -282,20 +383,78 @@ namespace ModEditor
             public abstract void UpdateItems();
         }
 
+        public class ModInfoController : Controller
+        {
+            public ModInfoController()
+            {
+                rootItem.name = "ModInfo";             
+            }
+
+            public override void ClearCache()
+            {
+
+            }            
+
+            private void OnNewItem(object sender, EventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override Control GenerateControl(ItemBase item)
+            {                
+                if(item.target == null)
+                    return null;
+                ItemExplorer explorer = new ItemExplorer();
+                Ship_Game.ModInformation targetObj = (Ship_Game.ModInformation)item.target;
+                explorer.Init(targetObj);
+                return explorer;
+            }
+
+            public override void ObtainModData(bool isBase)
+            {               
+            }
+
+            public override void PopulateModOverview(TreeNodeCollection root)
+            {
+                if (rootItem == null)
+                    return;
+                TreeNode groupNode = null;
+                string folder = "ModInfo";
+                if (root.ContainsKey(folder))
+                    groupNode = root[folder];
+                else
+                {
+                    groupNode = new TreeNode(folder);
+                    root.Add(groupNode);
+                }
+                groupNode.Tag = rootItem;
+                rootItem.node = groupNode;
+            }
+
+            public override void Save(string dir)
+            {
+            }
+
+            public override void UpdateItems()
+            {
+            }
+        }
+        
         public class StringsGroup : Controller
         {
-            ItemBase strings;
-            DataTable dt = new DataTable();
+            static DataTable globalStrings = new DataTable();
+            DataTable localStrings = new DataTable();
+            DataColumn localColumnTokens;
 
             public StringsGroup()
             {
-                strings = new ItemBase(null, this);
-                strings.controller = this;
-                strings.name = "Strings";
-
-                dt.Columns.Add(new DataColumn("token", typeof(int)));
-                dt.Columns.Add(new DataColumn("text", typeof(string)));
-                dt.Columns.Add(new DataColumn("refs", typeof(int)));                  
+                rootItem.name = "Strings";
+                localColumnTokens = new DataColumn("token", typeof(int));
+                localColumnTokens.Unique = true;
+                localStrings.Columns.Add(localColumnTokens);
+                localStrings.PrimaryKey = new DataColumn[] { localColumnTokens };
+//                dt.Columns.Add(new DataColumn("text", typeof(string)));
+//                dt.Columns.Add(new DataColumn("refs", typeof(int)));                  
             }
 
             public override void ClearCache()
@@ -303,23 +462,105 @@ namespace ModEditor
 
             }
 
+            public override ContextMenuStrip GenerateContextMenu(ItemBase item)
+            {
+                ContextMenuStrip result = new ContextMenuStrip();
+                if (item.Equals(rootItem))
+                {
+                    result.Items.Add("New Language", null, OnNewItem);
+                }
+                else
+                {                    
+                    result.Items.Add("Delete", null, OnDeleteItem);
+                }
+                return result;
+            }
+
+            private void OnDeleteItem(object sender, EventArgs e)
+            {
+            }
+
+            private void OnNewItem(object sender, EventArgs e)
+            {
+            }
+
             public override Control GenerateControl(ItemBase item)
             {
                 DataGridView result = new DataGridView();
-                result.DataSource = dt;
+                result.DataSource = localStrings;
                 result.Dock = DockStyle.Fill;
                 result.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
                 //result.Columns["text"].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
                 return result;
             }
 
-            public override void ObtainModData(bool isBase)
+            private Ship_Game.LocalizationFile LoadLanguage(string language)
             {
+                FileInfo[] textList = GetFilesFromDirectory(language);
+                XmlSerializer serializer = new XmlSerializer(typeof(Ship_Game.LocalizationFile));
+                FileInfo[] array = textList;
+                Ship_Game.LocalizationFile result = null;
+                for (int i = 0; i < array.Length; i++)
+                {
+                    FileInfo FI = array[i];
+                    FileStream stream = FI.OpenRead();
+                    Ship_Game.LocalizationFile data = (Ship_Game.LocalizationFile)serializer.Deserialize(stream);
+                    stream.Close();
+                    stream.Dispose();
+                    result = data;
+                    //Ship_Game.ResourceManager.LanguageFile = data;
+                }
+                //Ship_Game.Localizer.FillLocalizer();
+                return result;
+            }
+
+            private void ProcessLanguage(Ship_Game.LocalizationFile data, string language)
+            {
+                DataColumn columnValue = null;
+                                
+                if (!localStrings.Columns.Contains(language))
+                {
+                    columnValue = localStrings.Columns.Add(language, typeof(string));
+                }
+                else
+                    columnValue = localStrings.Columns[language];
+                int rowsCount = localStrings.Rows.Count;
+
+                foreach (var entry in data.TokenList)
+                {
+                    //string expression = String.Format("token Like  {0}", entry.Index);
+                    DataRow row = localStrings.Rows.Find(entry.Index);
+                                        
+                    if (row == null)
+                    {
+                        row = localStrings.NewRow();
+                        //row.BeginEdit();
+                        row[columnValue] = entry.Text;
+                        row[localColumnTokens] = entry.Index;
+                        localStrings.Rows.Add(row);
+                        //row.EndEdit();
+                    }
+                    else
+                    {
+                        row[columnValue] = entry.Text;
+                    }
+                }
+            }
+
+            public override void ObtainModData(bool isBase)
+            {                
+                foreach (var dir in GetDirectoriesFromDirectory(Ship_Game.ResourceManager.WhichModPath + "/Localization/"))
+                {
+                    var data = LoadLanguage(dir.FullName);
+                    if (data != null)
+                        ProcessLanguage(data, dir.Name);
+                }
+		/*
                 foreach (var item in Ship_Game.Localizer.LocalizerDict)
                 {
                     object[] row = { item.Key, item.Value, 0 };
-                    dt.Rows.Add(row);
-                }
+                    localStrings.Rows.Add(row);
+                }*/
             }
 
             public override void PopulateModOverview(TreeNodeCollection root)
@@ -333,8 +574,8 @@ namespace ModEditor
                     groupNode = new TreeNode(folder);
                     root.Add(groupNode);
                 }
-                groupNode.Tag = strings;
-                strings.node = groupNode;
+                groupNode.Tag = rootItem;
+                rootItem.node = groupNode;
             }
 
             public override void Save(string dir)
@@ -345,6 +586,7 @@ namespace ModEditor
             { 
             }
         }
+
         public abstract class ControllerSpec<Target> : Controller
         {            
             // Global items cache            
@@ -363,6 +605,35 @@ namespace ModEditor
             public override void ClearCache()
             {
                 localCache.Clear();
+            }
+
+            public override ContextMenuStrip GenerateContextMenu(ItemBase item)
+            {
+                ContextMenuStrip result = new ContextMenuStrip();
+                if (item.Equals(rootItem))
+                {
+                    result.Items.Add("New", null, OnNewItem);
+                }
+                else
+                {
+                    result.Items.Add("Copy", null, OnCopyItem);
+                    result.Items.Add("Delete", null, OnDeleteItem);
+                }
+                return result;
+            }
+
+            private void OnDeleteItem(object sender, EventArgs e)
+            {
+                
+            }
+
+            private void OnCopyItem(object sender, EventArgs e)
+            {
+            }
+
+            private void OnNewItem(object sender, EventArgs e)
+            {
+
             }
 
             public abstract Dictionary<string, Target> GetStorage();
@@ -395,6 +666,8 @@ namespace ModEditor
 
             public override Control GenerateControl(ItemBase item)
             {
+                if (item.Equals(rootItem))
+                    return null;
                 ItemExplorer explorer = new ItemExplorer();
                 Target targetObj = (Target)item.target;
                 explorer.Init(targetObj);
@@ -417,6 +690,9 @@ namespace ModEditor
                     root.Add(groupNode);
                 }
 
+                groupNode.Tag = rootItem;
+                rootItem.node = groupNode;
+
                 foreach (var entry in localCache)
                 {
                     if (entry.Value.node == null)
@@ -424,7 +700,6 @@ namespace ModEditor
                         TreeNode node = new TreeNode(entry.Key);
                         entry.Value.node = node;
                         node.Tag = entry.Value;
-                       
                         groupNode.Nodes.Add(node);
                     }                    
                 }
@@ -491,7 +766,7 @@ namespace ModEditor
         {
             public override XmlSerializer GetSerializer()
             {
-                return Ship_Game.ResourceManager.weapon_serializer;
+                return null;
             }
 
             public override Dictionary<string, Texture2D> GetStorage()

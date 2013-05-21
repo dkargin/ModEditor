@@ -241,6 +241,27 @@ namespace ModEditor
             }
         }
 
+        private void ModContentsTree_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                // Select the clicked node
+                TreeNode selected = ModContentsTree.GetNodeAt(e.X, e.Y);
+                ModContentsTree.SelectedNode = selected;
+
+                if (selected != null && selected.Tag != null )
+                {
+                    ModContents.ItemBase item = selected.Tag as ModContents.ItemBase;
+                    if(item != null)
+                    {
+                        ContextMenuStrip menu = item.GenerateContextMenu();
+                        if(menu != null)
+                            menu.Show(ModContentsTree, e.Location);                        
+                    }                    
+                }
+            }
+        }
+
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.Close();
@@ -250,5 +271,10 @@ namespace ModEditor
         {
             SaveMod("testExport.xml");
         }
+
+        private void loadBaseDataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            LoadBase();
+        }        
     }
 }
