@@ -17,8 +17,8 @@ using WinFormsContentLoading;
 
 namespace ModEditor
 {
-    public partial class MainForm : Form
-    {        
+    public partial class MainForm : Form, ModContents.Explorer
+    {   
         public Ship_Game.Game1 game;
         public XNAWrap baseGame;        
         
@@ -30,10 +30,10 @@ namespace ModEditor
         {            
             InitializeComponent();
             EditorManager.Init();
-
-            string source = "Laser weapons factory. Provides production bonus ${Building.SoftAttack} per assigned colonist. Also can defend colony using its production directly from the assembly line, shooting orbital targets at range ${Weapon.Range}. Needs ${Building.Maintenance} maintance per turn.";
-            Ship_Game.Building building = new Ship_Game.Building();
-            Console.WriteLine(ModContents.EmbedToString(source, building));
+            /// Strings test
+            //string source = "Laser weapons factory. Provides production bonus ${Building.SoftAttack} per assigned colonist. Also can defend colony using its production directly from the assembly line, shooting orbital targets at range ${Weapon.Range}. Needs ${Building.Maintenance} maintance per turn.";
+            //Ship_Game.Building building = new Ship_Game.Building();
+            //Console.WriteLine(ModContents.EmbedToString(source, building));
         }
 
         public enum EditorStatus
@@ -57,29 +57,10 @@ namespace ModEditor
             try
             {
                 baseGame = new XNAWrap();
-                Ship_Game.GlobalStats.Config = new Ship_Game.Config();
-               // contentBuilder = new ContentBuilder();
-                //contentManager = new ContentManager(modelViewer.Services, "Content");
-                /*
-                graphics = new GraphicsDeviceManager(baseGame);
-                graphics.MinimumPixelShaderProfile = ShaderProfile.PS_2_0;
-                graphics.MinimumVertexShaderProfile = ShaderProfile.VS_2_0;
-                string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                Directory.CreateDirectory(path + "/StarDrive");
-                Directory.CreateDirectory(path + "/StarDrive/Saved Games");
-                Directory.CreateDirectory(path + "/StarDrive/Fleet Designs");
-                Directory.CreateDirectory(path + "/StarDrive/Saved Designs");
-                Directory.CreateDirectory(path + "/StarDrive/WIP");
-                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/StarDrive/Saved Games/Headers");
-                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/StarDrive/Saved Games/Fog Maps");
-
-                graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
-                graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
-                graphics.IsFullScreen = false;*/
+                Ship_Game.GlobalStats.Config = new Ship_Game.Config();               
                 baseGame.Content.RootDirectory = "Content";
                 Ship_Game.ResourceManager.localContentManager = baseGame.Content;
                 baseGame.graphics.ApplyChanges();
-                //baseGame.Run();                
             }
             catch(Exception e)
 			{
@@ -94,7 +75,14 @@ namespace ModEditor
             contentsBase.Reset();
             Ship_Game.ResourceManager.Reset();
         }
-      
+
+        void CreateMod()
+        {
+            if (contentsMod == null)
+            {
+            }
+        }
+
 
         void SaveMod(string ModEntryPath)
         {
@@ -106,6 +94,12 @@ namespace ModEditor
             }
         }
 
+        public string GetGamePath()
+        {
+            return "";
+        }
+
+        
         void LoadBase()
         {
             if (!contentsBase.Loaded())
@@ -115,7 +109,7 @@ namespace ModEditor
                 {
                     // 1. Load contents
                     Ship_Game.ResourceManager.Initialize(baseGame.Content);
-                    contentsBase.PopulateData(true);
+                    contentsBase.PopulateData(GetGamePath()+"Content", true);
                     contentsBase.state = ModContents.State.Loaded;
                     // 2. Analyze contents
                     //modReady = true;
@@ -203,14 +197,10 @@ namespace ModEditor
             return null;
         }
 
-        /// <summary>
-        /// Order Main UI to show item contents
-        /// </summary>
-        /// <param name="item"></param>
-        public void ExploreItem(ModEditor.ModContents.ItemBase item)
+        public void ExploreItem(ModEditor.ModContents.Item item)
         {
             if (item.page == null)
-            {                
+            {
                 Control control = item.GenerateControl();
                 if (control != null)
                 {
@@ -233,11 +223,14 @@ namespace ModEditor
 
         private void ModContentsTree_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            TreeNode selected = e.Node;
-            ModEditor.ModContents.ItemBase item = selected.Tag as ModEditor.ModContents.ItemBase;
-            if (selected != null && item != null)
+            if (e.Button == MouseButtons.Left)
             {
-                ExploreItem(item);
+                TreeNode selected = e.Node;
+                ModEditor.ModContents.Item item = selected.Tag as ModEditor.ModContents.Item;                
+                if (selected != null && item != null)
+                {
+                    ExploreItem(item);
+                }
             }
         }
 
@@ -251,7 +244,7 @@ namespace ModEditor
 
                 if (selected != null && selected.Tag != null )
                 {
-                    ModContents.ItemBase item = selected.Tag as ModContents.ItemBase;
+                    ModContents.Item item = selected.Tag as ModContents.Item;
                     if(item != null)
                     {
                         ContextMenuStrip menu = item.GenerateContextMenu();
@@ -275,6 +268,22 @@ namespace ModEditor
         private void loadBaseDataToolStripMenuItem_Click(object sender, EventArgs e)
         {
             LoadBase();
+        }
+
+        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
+        }
+
+        private void newModToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateMod();
+        }
+
+        private void CheckExternalModifications_Tick(object sender, EventArgs e)
+        {
+            contentsBase.CheckExternalModifications();
+            contentsMod.CheckExternalModifications();
         }        
     }
 }

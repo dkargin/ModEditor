@@ -22,18 +22,25 @@ namespace ModEditor
 
         public Dictionary<string, EditorManager.FieldEditor> editors = new Dictionary<string,EditorManager.FieldEditor>();
 
-        public void Init<ItemType>(ItemType item)
+        public void Init<DataType>(ModContents.Item item, DataType data)
         {
-            Type typedef = typeof(ItemType);
+            Type typedef = typeof(DataType);
+           // ModContents.Item baseItem = item as 
             this.valueType.Text = typedef.Name;
+            this.valuePath.Text = item.GetPath();
             this.SuspendLayout();
             foreach (var member in typedef.GetFields())            
             {
-                var value = member.GetValue(item);
+                var value = member.GetValue(data);
                 if (value != null)
                 {
-                    EditorManager.FieldEditor editor = EditorManager.generateControl(member, item);
+                    EditorManager.FieldEditor editor = item.controller.GenerateFieldEditor(member, item);
+
+                    if (editor == null)
+                        continue;
                     Control control = editor.GetControl();
+
+                    //Control control = item.controller.GenerateControl(member, data);
                     control.Dock = DockStyle.Fill;
                     if (control != null)
                     {

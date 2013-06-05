@@ -8,39 +8,39 @@ namespace ModEditor.Controls
 {
     public class EditorManager
     {
-        static public Dictionary<System.Type, Func<System.Reflection.FieldInfo, Object, FieldEditor>> editors = new Dictionary<System.Type, Func<System.Reflection.FieldInfo, object, FieldEditor>>();
+        static public Dictionary<System.Type, Func<System.Reflection.FieldInfo, ModContents.Item, FieldEditor>> editors = new Dictionary<System.Type, Func<System.Reflection.FieldInfo, ModContents.Item, FieldEditor>>();
 
         /// <summary>
         /// Register editors for basic types
         /// </summary>
         static public void Init()
-        {            
-            editors.Add(typeof(string), (System.Reflection.FieldInfo field, Object obj) =>
+        {
+            editors.Add(typeof(string), (System.Reflection.FieldInfo field, ModContents.Item obj) =>
             {
                 return new FieldEditorString(field, obj);
             });
 
-            editors.Add(typeof(Single), (System.Reflection.FieldInfo field, Object obj) =>
+            editors.Add(typeof(Single), (System.Reflection.FieldInfo field, ModContents.Item obj) =>
             {
                 return new FieldEditorFloat(field, obj);
             });
 
-            editors.Add(typeof(Int16), (System.Reflection.FieldInfo field, Object obj) =>
+            editors.Add(typeof(Int16), (System.Reflection.FieldInfo field, ModContents.Item obj) =>
             {
                 return new FieldEditorInt<Int16>(field, obj);
-            });            
+            });
 
-            editors.Add(typeof(Int32), (System.Reflection.FieldInfo field, Object obj) =>
+            editors.Add(typeof(Int32), (System.Reflection.FieldInfo field, ModContents.Item obj) =>
             {
                 return new FieldEditorInt<Int32>(field, obj);
             });
 
-            editors.Add(typeof(Byte), (System.Reflection.FieldInfo field, Object obj) =>
+            editors.Add(typeof(Byte), (System.Reflection.FieldInfo field, ModContents.Item obj) =>
             {
                 return new FieldEditorInt<Byte>(field, obj);
             });
 
-            editors.Add(typeof(Boolean), (System.Reflection.FieldInfo field, Object obj) =>
+            editors.Add(typeof(Boolean), (System.Reflection.FieldInfo field, ModContents.Item obj) =>
             {
                 return new FieldEditorBool(field, obj);
             });
@@ -51,14 +51,14 @@ namespace ModEditor.Controls
         /// <param name="fieldInfo"></param>
         /// <param name="item"></param>
         /// <returns></returns>
-        static public FieldEditor generateControl(System.Reflection.FieldInfo fieldInfo, Object item)
+        static public FieldEditor generateControl(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
         {            
             if (fieldInfo.FieldType.IsEnum)
             {
                 return new FieldEditorEnum(fieldInfo, item);
             }
-            
-            Func<System.Reflection.FieldInfo, Object, FieldEditor> factory = null;
+
+            Func<System.Reflection.FieldInfo, ModContents.Item, FieldEditor> factory = null;
             try
             {
                 factory = editors[fieldInfo.FieldType];
@@ -73,10 +73,10 @@ namespace ModEditor.Controls
 
         public class FieldEditor
         {
-            public System.Reflection.FieldInfo fieldInfo;
-            public Object item;
+            System.Reflection.FieldInfo fieldInfo;
+            public ModContents.Item item;
 
-            public FieldEditor(System.Reflection.FieldInfo field, Object item)
+            public FieldEditor(System.Reflection.FieldInfo field, ModContents.Item item)
             {
                 fieldInfo = field;
                 this.item = item;
@@ -93,12 +93,29 @@ namespace ModEditor.Controls
             public virtual void UpdateValue()
             {
             }
+
+            public System.Reflection.FieldInfo FieldInfo
+            {
+                get
+                {
+                    return fieldInfo;
+                }
+            }
+            protected object ReadValue()
+            {
+                return ModContents.ReadItemValue(item, fieldInfo);
+            }
+
+            protected void WriteValue(object value)
+            {
+                ModContents.ChangeItemValue(item, fieldInfo, value);
+            }
         }
 
         public class FieldEditorFloat : FieldEditor
         {
             TextBox control;
-            public FieldEditorFloat(System.Reflection.FieldInfo fieldInfo, Object item)
+            public FieldEditorFloat(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
                 : base(fieldInfo, item)
             {
                 control = new TextBox();
@@ -111,7 +128,7 @@ namespace ModEditor.Controls
                 Single value;
                 if (Single.TryParse(control.Text, out value))
                 {
-                    fieldInfo.SetValue(item, value);
+                    WriteValue(value);                    
                 }
             }
 
@@ -130,15 +147,15 @@ namespace ModEditor.Controls
             }
             public override void UpdateValue()
             {
-                control.Text = fieldInfo.GetValue(item).ToString();
+                control.Text =  ReadValue().ToString();
             }
         }
 
         public class FieldEditorEnum : FieldEditor
         {
             ComboBox control;
-            
-            public FieldEditorEnum(System.Reflection.FieldInfo fieldInfo, Object item)
+
+            public FieldEditorEnum(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
                 : base(fieldInfo, item)
             {
                 control = new ComboBox();
@@ -151,8 +168,8 @@ namespace ModEditor.Controls
             void control_SelectedIndexChanged(object sender, EventArgs e)
             {
                 //throw new NotImplementedException();
-                object value = Enum.Parse(fieldInfo.FieldType, control.SelectedItem.ToString());
-                fieldInfo.SetValue(item, value);
+                object value = Enum.Parse(FieldInfo.FieldType, control.SelectedItem.ToString());
+                WriteValue(value);                
             }
 
             public override Control GetControl()
@@ -161,7 +178,7 @@ namespace ModEditor.Controls
             }
             public override void UpdateValue()
             {
-                object value = fieldInfo.GetValue(item);
+                object value = ReadValue();
                 control.SelectedItem = value.ToString();
                 //control.Text = fieldInfo.GetValue(item).ToString();
             }
@@ -172,7 +189,7 @@ namespace ModEditor.Controls
         public class FieldEditorReadOnly : FieldEditor
         {
             TextBox control;
-            public FieldEditorReadOnly(System.Reflection.FieldInfo fieldInfo, Object item)
+            public FieldEditorReadOnly(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
                 :base(fieldInfo, item)
             {
                 control = new TextBox();
@@ -184,7 +201,7 @@ namespace ModEditor.Controls
             }
             public override void UpdateValue()
             {
-                control.Text = fieldInfo.GetValue(item).ToString();
+                control.Text = ReadValue().ToString();
             }
         }
         /// <summary>
@@ -193,10 +210,12 @@ namespace ModEditor.Controls
         public class FieldEditorInt<TargetInt> : FieldEditor
         {
             NumericUpDown control;
-            public FieldEditorInt(System.Reflection.FieldInfo fieldInfo, Object item)
+            public FieldEditorInt(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
                 :base(fieldInfo, item)
             {
                 control = new NumericUpDown();
+                if (item.IsBase())
+                    control.ReadOnly = true;
                 control.ValueChanged += control_ValueChanged;
 
                 SetLimits();
@@ -225,7 +244,7 @@ namespace ModEditor.Controls
             {      
                 try{
                     TargetInt value = (TargetInt)Convert.ChangeType(control.Value, typeof(TargetInt));
-                    fieldInfo.SetValue(item, value);
+                    WriteValue(value);                    
                 }
                 catch (Exception)
                 { }
@@ -239,7 +258,7 @@ namespace ModEditor.Controls
             {
                 try
                 {
-                    object objValue = fieldInfo.GetValue(item);
+                    object objValue = ReadValue();// fieldInfo.GetValue(item);
                     control.Value = (Decimal)Convert.ChangeType(objValue, typeof(Decimal)); //Convert.ToDecimal(objValue);
                 }
                 catch (Exception)
@@ -250,16 +269,18 @@ namespace ModEditor.Controls
         public class FieldEditorBool : FieldEditor
         {
             CheckBox control;
-            public FieldEditorBool(System.Reflection.FieldInfo fieldInfo, Object item)
+            public FieldEditorBool(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
                 : base(fieldInfo, item)
             {
                 control = new CheckBox();
                 control.CheckedChanged += control_ValueChanged;
+                if (item.IsBase())
+                    control.Enabled = false;
             }
 
             void control_ValueChanged(object sender, EventArgs e)
             {                
-                fieldInfo.SetValue(item, control.Checked);
+                WriteValue(control.Checked);
             }
 
             public override Control GetControl()
@@ -268,7 +289,7 @@ namespace ModEditor.Controls
             }
             public override void UpdateValue()
             {
-                Boolean objValue = (Boolean)fieldInfo.GetValue(item);
+                Boolean objValue = (Boolean)ReadValue();
 
                 control.Checked = objValue;
             }
@@ -279,14 +300,15 @@ namespace ModEditor.Controls
         public class FieldEditorString : FieldEditor
         {         
             TextBox control;
-            public FieldEditorString(System.Reflection.FieldInfo fieldInfo, Object item)
+            public FieldEditorString(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
                 :base(fieldInfo, item)
             {
                 control = new TextBox();
-                //control.ReadOnly = true;
+                if(item.IsBase())
+                    control.ReadOnly = true;
                 control.TextChanged += (object sender, EventArgs e) =>
                 {
-                    fieldInfo.SetValue(item, control.Text);
+                    WriteValue(control.Text);                    
                 };
             }           
 
@@ -302,7 +324,7 @@ namespace ModEditor.Controls
 
             public override void UpdateValue()
             {                
-                control.Text = (string)fieldInfo.GetValue(item);
+                control.Text = (string)ReadValue();
             }
         }
     }
