@@ -80,6 +80,16 @@ namespace ModEditor
         {
             if (contentsMod == null)
             {
+                SaveFileDialog dialog = new SaveFileDialog();
+                dialog.Filter = "Mod XML description|*.xml";
+                dialog.Title = "Mod XML description file";
+
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    contentsMod = ModContents.CreateNewMod(ModContentsTree, dialog.FileName);
+                    contentsMod.UpdateUI();
+                    contentsBase.UpdateUI();
+                }
             }
         }
 
@@ -138,7 +148,6 @@ namespace ModEditor
                 contentsMod.LoadMod(ModEntryPath);
 
                 contentsBase.UpdateUI();
-                contentsMod.UpdateUI();
 
                 Status = EditorStatus.Ready;
             }
@@ -205,6 +214,7 @@ namespace ModEditor
                 if (control != null)
                 {
                     item.page = new TabPage(item.name);
+                    item.page.Tag = item;
                     //ItemExplorer explorer = new ItemExplorer();
                     //explorer.Dock = DockStyle.Fill;
                     //item.PopulateExplorer(explorer);
@@ -284,6 +294,11 @@ namespace ModEditor
         {
             contentsBase.CheckExternalModifications();
             contentsMod.CheckExternalModifications();
+        }
+
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            (new FormAbout()).ShowDialog();
         }        
     }
 }

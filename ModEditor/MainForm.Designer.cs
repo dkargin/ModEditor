@@ -31,9 +31,11 @@
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.SplitContainer splitContainer1;
             this.ModContentsTree = new System.Windows.Forms.TreeView();
+            this.EditorTabs = new ModEditor.Controls.TabControlEx();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fILEToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadBaseDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -45,8 +47,6 @@
             this.statusGeneral = new System.Windows.Forms.ToolStripStatusLabel();
             this.statusModPath = new System.Windows.Forms.ToolStripStatusLabel();
             this.GenericObjectsMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.newModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.EditorTabs = new ModEditor.Controls.TabControlEx();
             this.TimerCheckExternalModifications = new System.Windows.Forms.Timer(this.components);
             splitContainer1 = new System.Windows.Forms.SplitContainer();
             splitContainer1.Panel1.SuspendLayout();
@@ -85,6 +85,19 @@
             this.ModContentsTree.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.ModContentsTree_NodeMouseClick);
             this.ModContentsTree.MouseUp += new System.Windows.Forms.MouseEventHandler(this.ModContentsTree_MouseUp);
             // 
+            // EditorTabs
+            // 
+            this.EditorTabs.Appearance = System.Windows.Forms.TabAppearance.FlatButtons;
+            this.EditorTabs.ConfirmOnClose = false;
+            this.EditorTabs.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.EditorTabs.HotTrack = true;
+            this.EditorTabs.Location = new System.Drawing.Point(0, 0);
+            this.EditorTabs.Name = "EditorTabs";
+            this.EditorTabs.Padding = new System.Drawing.Point(3, 1);
+            this.EditorTabs.SelectedIndex = 0;
+            this.EditorTabs.Size = new System.Drawing.Size(465, 433);
+            this.EditorTabs.TabIndex = 1;
+            // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -114,39 +127,46 @@
             // loadBaseDataToolStripMenuItem
             // 
             this.loadBaseDataToolStripMenuItem.Name = "loadBaseDataToolStripMenuItem";
-            this.loadBaseDataToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.loadBaseDataToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.loadBaseDataToolStripMenuItem.Text = "Load base data";
             this.loadBaseDataToolStripMenuItem.Click += new System.EventHandler(this.loadBaseDataToolStripMenuItem_Click);
+            // 
+            // newModToolStripMenuItem
+            // 
+            this.newModToolStripMenuItem.Name = "newModToolStripMenuItem";
+            this.newModToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
+            this.newModToolStripMenuItem.Text = "New Mod";
+            this.newModToolStripMenuItem.Click += new System.EventHandler(this.newModToolStripMenuItem_Click);
             // 
             // openModToolStripMenuItem
             // 
             this.openModToolStripMenuItem.Name = "openModToolStripMenuItem";
-            this.openModToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.openModToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.openModToolStripMenuItem.Text = "Open Mod";
             this.openModToolStripMenuItem.Click += new System.EventHandler(this.openModToolStripMenuItem_Click);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.saveToolStripMenuItem.Text = "Save";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // exportToolStripMenuItem
             // 
             this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
-            this.exportToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exportToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.exportToolStripMenuItem.Text = "Export";
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(145, 6);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -161,8 +181,9 @@
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(103, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.aboutToolStripMenuItem.Text = "About";
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // statusStrip1
             // 
@@ -191,24 +212,6 @@
             // 
             this.GenericObjectsMenu.Name = "GenericObjectsMenu";
             this.GenericObjectsMenu.Size = new System.Drawing.Size(61, 4);
-            // 
-            // newModToolStripMenuItem
-            // 
-            this.newModToolStripMenuItem.Name = "newModToolStripMenuItem";
-            this.newModToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.newModToolStripMenuItem.Text = "New Mod";
-            this.newModToolStripMenuItem.Click += new System.EventHandler(this.newModToolStripMenuItem_Click);
-            // 
-            // EditorTabs
-            // 
-            this.EditorTabs.Appearance = System.Windows.Forms.TabAppearance.FlatButtons;
-            this.EditorTabs.ConfirmOnClose = true;
-            this.EditorTabs.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.EditorTabs.Location = new System.Drawing.Point(0, 0);
-            this.EditorTabs.Name = "EditorTabs";
-            this.EditorTabs.SelectedIndex = 0;
-            this.EditorTabs.Size = new System.Drawing.Size(465, 433);
-            this.EditorTabs.TabIndex = 1;
             // 
             // TimerCheckExternalModifications
             // 

@@ -44,27 +44,19 @@ namespace ModEditor
 
         public State state = State.Empty;
 
-        ModInfoController modInfoController = new ModInfoController();
+        ModInfoController modInfoController;
+
+        // Directory with mod data
+        protected string modRootPath = "Contents";
 
         public ModContents(TreeView treeView)
         {
             this.treeView = treeView;
+            
             rootTreeNode = new TreeNode("Root Node");
             treeView.Nodes.Add(rootTreeNode);
-            Reset();
 
-            AddController(new ModContents.ArtifactsSpec());
-            AddController(new ModContents.EventsGroup());
-            AddController(new ModContents.HullsGroup());
-            AddController(new ModContents.BuildingSpec());
-            AddController(new ModContents.ModuleSpec());            
-            AddController(new ModContents.TechSpec());
-            AddController(new ModContents.TexturesGroup());
-            AddController(new ModContents.TroopSpec());
-            AddController(new ModContents.WeaponGroup());
-
-            AddController(modInfoController);
-            AddController(new ModContents.StringsGroup());
+            InitControllers();
             /*             
              	Races
 	            Encounters 
@@ -72,9 +64,50 @@ namespace ModEditor
              */
         }
 
+        public static ModContents CreateNewMod(TreeView treeView, string modPath)
+        {
+            ModContents result = new ModContents(treeView);
+            result.modRootPath = modPath;
+            result.modInfo = new Ship_Game.ModInformation()
+            {
+                ModName = Path.GetFileNameWithoutExtension(modPath)
+            };
+            result.UpdateModInfo();
+            result.PopulateData(result.modRootPath, false);
+            return result;
+        }
+        /*
+        static ModContents LoadMod(T)
+        {
+        }*/
+
+        void InitControllers()
+        {
+            modInfoController = new ModInfoController(this);
+            AddController(new ModContents.ArtifactsSpec(this));
+            AddController(new ModContents.EventsGroup(this));
+            AddController(new ModContents.HullsGroup(this));
+            AddController(new ModContents.BuildingSpec(this));
+            AddController(new ModContents.ModuleSpec(this));
+            AddController(new ModContents.TechSpec(this));
+            AddController(new ModContents.TexturesGroup(this));
+            AddController(new ModContents.TroopSpec(this));
+            AddController(new ModContents.WeaponGroup(this));
+
+            AddController(modInfoController);
+            AddController(new ModContents.StringsGroup(this));
+        }
+
         public bool Loaded()
         {
             return state == State.Loaded;
+        }
+
+        void UpdateModInfo()
+        {
+            modInfoController.rootItem.target = modInfo;
+            rootTreeNode.Name = modInfo.ModName;
+            rootTreeNode.Text = modInfo.ModName;
         }
 
         protected bool LoadModInfo(string ModEntryPath)
@@ -84,9 +117,10 @@ namespace ModEditor
                 FileInfo FI = new FileInfo(ModEntryPath);
                 Stream file = FI.OpenRead();
                 modInfo = (Ship_Game.ModInformation)Ship_Game.ResourceManager.ModSerializer.Deserialize(file);
-                modInfoController.rootItem.target = modInfo;
-                rootTreeNode.Name = modInfo.ModName;
-                rootTreeNode.Text = modInfo.ModName;
+                modRootPath = Path.GetDirectoryName(ModEntryPath) + "/" + Path.GetFileNameWithoutExtension(ModEntryPath);
+
+                UpdateModInfo();                
+                
                 file.Close();
                 file.Dispose();
                 return true;
@@ -155,6 +189,16 @@ namespace ModEditor
             controllers.Add(controller);
         }
 
+        public string RootPath
+        {
+            get
+            {
+                if (modInfo != null)
+                    return modRootPath;
+                return "Content";
+            }
+        }
+
         public void LoadMod(string ModEntryPath)
         {
             try
@@ -172,8 +216,9 @@ namespace ModEditor
             catch (Exception)
             {
             }
+            UpdateUI();
         }
-
+        
         public void Reset()
         {
             //rootBase.Nodes.Clear();// = null;
@@ -324,10 +369,7 @@ namespace ModEditor
             public Controller controller;
             public Object target;            
             public Item prev, next;
-            public bool IsBase()
-            {
-                return controller.IsBase();
-            }
+            
             public bool isBase;
             public string name;
             protected string sourcePath;
@@ -351,6 +393,18 @@ namespace ModEditor
                 this.controller = controller;
                 this.sourcePath = path;
             }
+
+            public bool IsBase()
+            {
+                return controller.IsBase();
+            }
+
+            public bool OnTabClosed()
+            {
+                page = null;
+                return true;
+            }
+
 
             // Set source path. TODO: replace this function
             public void SetPath(string path)
@@ -452,8 +506,11 @@ namespace ModEditor
                 return isBase;
             }
 
-            public Controller()
+            protected ModContents mod;
+
+            public Controller(ModContents mod)
             {
+                this.mod = mod;
                 rootItem = new Item(null, this, "");
                 rootItem.controller = this;
             }
@@ -522,7 +579,7 @@ namespace ModEditor
                 {
                     try
                     {
-                        string path = item.Path;
+                        string path = mod.RootPath + "/" + item.Path;
                         System.Diagnostics.Process.Start(path);
                         return true;
                     }
@@ -538,7 +595,6 @@ namespace ModEditor
             {
             }
         }
-
 
         public interface EditAction
         {
@@ -567,8 +623,9 @@ namespace ModEditor
 
         public class ModInfoController : Controller
         {
-            public ModInfoController()
-            {
+            public ModInfoController(ModContents mod)
+                :base(mod)
+            {                
                 rootItem.name = "ModInfo";             
             }
 
@@ -631,7 +688,8 @@ namespace ModEditor
             DataTable localStrings = new DataTable();
             DataColumn localColumnTokens;
 
-            public StringsGroup()
+            public StringsGroup(ModContents mod)
+                : base(mod)
             {
                 rootItem.name = "Strings";
                 localColumnTokens = new DataColumn("token", typeof(int));
@@ -784,7 +842,8 @@ namespace ModEditor
 
             public XmlSerializer serializer;
 
-            public ControllerSpec()
+            public ControllerSpec(ModContents mod)
+                :base(mod)
             {
                 serializer = new XmlSerializer(typeof(Target));
             }
@@ -957,7 +1016,7 @@ namespace ModEditor
                 foreach (var entry in data)
                 {                   
                     Item item = null;
-                    string itemPath = basePath + "/" + this.GetGroupFolder() + "/" + entry.Key + fileExtension;
+                    string itemPath = this.GetGroupFolder() + "/" + entry.Key + fileExtension;
                     if (globalCache.ContainsKey(entry.Key))
                     {
                         Item oldItem = globalCache[entry.Key];
@@ -989,7 +1048,8 @@ namespace ModEditor
 
         public class WeaponGroup : ControllerSpec<Ship_Game.Gameplay.Weapon>
         {
-            public WeaponGroup()
+            public WeaponGroup(ModContents mod)
+                : base(mod)
             { 
                 this.groupName = "Weapons";
                 serializer = Ship_Game.ResourceManager.weapon_serializer;
@@ -1008,7 +1068,8 @@ namespace ModEditor
 
         public class TexturesGroup : ControllerSpec<Texture2D>
         {
-            public TexturesGroup()
+            public TexturesGroup(ModContents mod)
+                : base(mod)
             {
                 fileExtension = ".xnb";
                 groupName = "Textures";
@@ -1028,7 +1089,8 @@ namespace ModEditor
 
         public class EventsGroup : ControllerSpec<Ship_Game.ExplorationEvent>
         {
-            public EventsGroup()
+            public EventsGroup(ModContents mod)
+                : base(mod)
             {
                 serializer = Ship_Game.ResourceManager.weapon_serializer;
                 groupName = "Exploration Events";
@@ -1065,7 +1127,8 @@ namespace ModEditor
 
         public class HullsGroup : ControllerSpec<Ship_Game.ShipData>
         {
-            public HullsGroup()
+            public HullsGroup(ModContents mod)
+                : base(mod)
             {
                 groupName = "Hulls";
                 serializer = Ship_Game.ResourceManager.weapon_serializer;
@@ -1079,7 +1142,8 @@ namespace ModEditor
 
         public class TechSpec : ControllerSpec<Ship_Game.Technology>
         {
-            public TechSpec()
+            public TechSpec(ModContents mod)
+                : base(mod)
             {
                 groupName = "Technology";
             }
@@ -1092,7 +1156,8 @@ namespace ModEditor
 
         public class TroopSpec : ControllerSpec<Ship_Game.Troop>
         {
-            public TroopSpec()
+            public TroopSpec(ModContents mod)
+                : base(mod)
             {
                 groupName = "Troops";
             }
@@ -1105,7 +1170,8 @@ namespace ModEditor
 
         public class BuildingSpec : ControllerSpec<Ship_Game.Building>
         {
-            public BuildingSpec()
+            public BuildingSpec(ModContents mod)
+                : base(mod)
             {
                 groupName = "Buildings";
             }
@@ -1117,7 +1183,8 @@ namespace ModEditor
 
         public class ArtifactsSpec : ControllerSpec<Ship_Game.Artifact>
         {
-            public ArtifactsSpec()
+            public ArtifactsSpec(ModContents mod)
+                : base(mod)
             {
                 groupName = "Artifacts";
             }
@@ -1129,7 +1196,8 @@ namespace ModEditor
 
         public class ModuleSpec : ControllerSpec<Ship_Game.Gameplay.ShipModule>
         {
-            public ModuleSpec()
+            public ModuleSpec(ModContents mod)
+                : base(mod)
             {
                 groupName = "ShipModules";
             }

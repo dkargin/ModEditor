@@ -119,6 +119,8 @@ namespace ModEditor.Controls
                 : base(fieldInfo, item)
             {
                 control = new TextBox();
+                if (item.IsBase())
+                    control.ReadOnly = true;
                 control.Validating += control_Validating;
                 control.TextChanged += control_TextChanged;
             }
@@ -162,14 +164,17 @@ namespace ModEditor.Controls
                 control.Items.AddRange(Enum.GetNames(fieldInfo.FieldType));
                 //control.DataSource = Enum.GetValues(fieldInfo.FieldType);
                 control.DropDownStyle = ComboBoxStyle.DropDownList;
-                control.SelectedIndexChanged += control_SelectedIndexChanged;
+                control.SelectedIndexChanged += control_SelectedIndexChanged;               
             }
 
             void control_SelectedIndexChanged(object sender, EventArgs e)
             {
                 //throw new NotImplementedException();
                 object value = Enum.Parse(FieldInfo.FieldType, control.SelectedItem.ToString());
-                WriteValue(value);                
+                if (item.IsBase())
+                    UpdateValue();
+                else
+                    WriteValue(value);                
             }
 
             public override Control GetControl()
@@ -244,7 +249,10 @@ namespace ModEditor.Controls
             {      
                 try{
                     TargetInt value = (TargetInt)Convert.ChangeType(control.Value, typeof(TargetInt));
-                    WriteValue(value);                    
+                    if (item.IsBase())
+                        UpdateValue();
+                    else
+                        WriteValue(value);                    
                 }
                 catch (Exception)
                 { }

@@ -23,8 +23,8 @@
             // 
             // dataPanel
             // 
-            dataPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            dataPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             dataPanel.AutoScroll = true;
             dataPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
@@ -67,15 +67,15 @@
             headerContainer.RowCount = 2;
             headerContainer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             headerContainer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            headerContainer.Size = new System.Drawing.Size(386, 49);
+            headerContainer.Size = new System.Drawing.Size(386, 52);
             headerContainer.TabIndex = 2;
             // 
             // labelPath
             // 
             this.labelPath.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.labelPath.Location = new System.Drawing.Point(3, 24);
+            this.labelPath.Location = new System.Drawing.Point(3, 26);
             this.labelPath.Name = "labelPath";
-            this.labelPath.Size = new System.Drawing.Size(124, 25);
+            this.labelPath.Size = new System.Drawing.Size(124, 26);
             this.labelPath.TabIndex = 4;
             this.labelPath.Text = "XML Path";
             // 
@@ -84,7 +84,7 @@
             this.labelType.Dock = System.Windows.Forms.DockStyle.Fill;
             this.labelType.Location = new System.Drawing.Point(3, 0);
             this.labelType.Name = "labelType";
-            this.labelType.Size = new System.Drawing.Size(124, 24);
+            this.labelType.Size = new System.Drawing.Size(124, 26);
             this.labelType.TabIndex = 3;
             this.labelType.Text = "Type";
             // 
@@ -100,7 +100,7 @@
             // valuePath
             // 
             this.valuePath.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.valuePath.Location = new System.Drawing.Point(133, 27);
+            this.valuePath.Location = new System.Drawing.Point(133, 29);
             this.valuePath.Name = "valuePath";
             this.valuePath.ReadOnly = true;
             this.valuePath.Size = new System.Drawing.Size(250, 20);
@@ -108,14 +108,14 @@
             // 
             // panel1
             // 
-            this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel1.AutoSize = true;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel1.Controls.Add(headerContainer);
             this.panel1.Location = new System.Drawing.Point(3, 3);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(388, 51);
+            this.panel1.Size = new System.Drawing.Size(388, 54);
             this.panel1.TabIndex = 3;
             // 
             // ItemExplorer
