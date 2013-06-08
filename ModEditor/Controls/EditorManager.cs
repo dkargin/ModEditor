@@ -8,6 +8,38 @@ namespace ModEditor.Controls
 {
     public class EditorManager
     {
+        static int preferedHeight = 17;
+        [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+        public class ModEditorAttribute : Attribute
+        {
+            public virtual ModEditor.Controls.EditorManager.FieldEditor GenerateEditor(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
+            {
+                return null;
+            }
+        }
+
+        public class LocStringToken : ModEditorAttribute
+        {
+            public override ModEditor.Controls.EditorManager.FieldEditor GenerateEditor(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
+            {
+                return new FieldEditorLocString(fieldInfo, item);
+            }
+        }
+
+
+        public class ObjectReference : ModEditorAttribute
+        {
+            public string groupName;
+            public ObjectReference(string group)
+            {
+                groupName = group;
+            }
+            public override ModEditor.Controls.EditorManager.FieldEditor GenerateEditor(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
+            {
+                return null;
+            }
+        }
+
         static public Dictionary<System.Type, Func<System.Reflection.FieldInfo, ModContents.Item, FieldEditor>> editors = new Dictionary<System.Type, Func<System.Reflection.FieldInfo, ModContents.Item, FieldEditor>>();
 
         /// <summary>
@@ -59,14 +91,10 @@ namespace ModEditor.Controls
             }
 
             Func<System.Reflection.FieldInfo, ModContents.Item, FieldEditor> factory = null;
-            try
-            {
+            if(editors.ContainsKey(fieldInfo.FieldType))
                 factory = editors[fieldInfo.FieldType];
-            }
-            catch (Exception)
-            {
+            else
                 return new FieldEditorReadOnly(fieldInfo, item);
-            }
 
             return factory(fieldInfo, item);
         }
@@ -119,6 +147,8 @@ namespace ModEditor.Controls
                 : base(fieldInfo, item)
             {
                 control = new TextBox();
+                control.BorderStyle = BorderStyle.None;
+                control.Height = preferedHeight;
                 if (item.IsBase())
                     control.ReadOnly = true;
                 control.Validating += control_Validating;
@@ -161,6 +191,7 @@ namespace ModEditor.Controls
                 : base(fieldInfo, item)
             {
                 control = new ComboBox();
+                //control.Bo = BorderStyle.None;
                 control.Items.AddRange(Enum.GetNames(fieldInfo.FieldType));
                 //control.DataSource = Enum.GetValues(fieldInfo.FieldType);
                 control.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -198,6 +229,8 @@ namespace ModEditor.Controls
                 :base(fieldInfo, item)
             {
                 control = new TextBox();
+                control.Height = preferedHeight;
+                control.BorderStyle = BorderStyle.None;
                 control.ReadOnly = true;
             }
             public override Control GetControl()
@@ -219,6 +252,7 @@ namespace ModEditor.Controls
                 :base(fieldInfo, item)
             {
                 control = new NumericUpDown();
+                control.BorderStyle = BorderStyle.None;
                 if (item.IsBase())
                     control.ReadOnly = true;
                 control.ValueChanged += control_ValueChanged;
@@ -281,6 +315,8 @@ namespace ModEditor.Controls
                 : base(fieldInfo, item)
             {
                 control = new CheckBox();
+                control.Height = preferedHeight;
+                //
                 control.CheckedChanged += control_ValueChanged;
                 if (item.IsBase())
                     control.Enabled = false;
@@ -312,6 +348,9 @@ namespace ModEditor.Controls
                 :base(fieldInfo, item)
             {
                 control = new TextBox();
+                control.BorderStyle = BorderStyle.None;
+
+                control.Height = preferedHeight;
                 if(item.IsBase())
                     control.ReadOnly = true;
                 control.TextChanged += (object sender, EventArgs e) =>
@@ -333,6 +372,42 @@ namespace ModEditor.Controls
             public override void UpdateValue()
             {                
                 control.Text = (string)ReadValue();
+            }
+        }
+
+        public class FieldEditorLocString : FieldEditor
+        {
+            StringEditor control;            
+            public FieldEditorLocString(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
+                : base(fieldInfo, item)
+            {
+                control = new StringEditor();
+                
+                /*
+                if (item.IsBase())
+                    control.ReadOnly = true;
+                control.TextChanged += (object sender, EventArgs e) =>
+                {
+                    WriteValue(control.Text);
+                };*/
+            }
+
+            void result_ValueChanged(object sender, EventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override Control GetControl()
+            {
+                return control;
+            }
+
+            public override void UpdateValue()
+            {
+                object value = ReadValue();
+                int index = (int)value;
+                control.TokenBox.Text = index.ToString();
+                control.ValueBox.Text = ModContents.GetLocString(index) ;
             }
         }
     }

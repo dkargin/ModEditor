@@ -45,9 +45,10 @@
             this.dataTable.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataTable.Location = new System.Drawing.Point(0, 0);
             this.dataTable.Name = "dataTable";
+            this.dataTable.Padding = new System.Windows.Forms.Padding(1);
             this.dataTable.RowCount = 2;
-            this.dataTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
-            this.dataTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.dataTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
+            this.dataTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
             this.dataTable.Size = new System.Drawing.Size(386, 317);
             this.dataTable.TabIndex = 3;
             // 
@@ -78,6 +79,7 @@
             this.labelPath.Size = new System.Drawing.Size(124, 26);
             this.labelPath.TabIndex = 4;
             this.labelPath.Text = "XML Path";
+            this.labelPath.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // labelType
             // 
@@ -87,6 +89,7 @@
             this.labelType.Size = new System.Drawing.Size(124, 26);
             this.labelType.TabIndex = 3;
             this.labelType.Text = "Type";
+            this.labelType.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // valueType
             // 

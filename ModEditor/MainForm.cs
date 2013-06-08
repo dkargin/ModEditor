@@ -24,7 +24,7 @@ namespace ModEditor
         
         ModContents contentsBase;
         ModContents contentsMod;
-
+         
        // Boolean modReady = false;
         public MainForm()
         {            

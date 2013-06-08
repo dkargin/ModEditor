@@ -132,31 +132,21 @@ namespace ModEditor.Controls
         {
             RectangleF tabArea = (RectangleF)this.GetTabRect(SelectedIndex);               
             Point pt = new Point(e.X, e.Y);
-            if (tabArea.Contains(pt) && (e.Button == System.Windows.Forms.MouseButtons.Right || e.Button == System.Windows.Forms.MouseButtons.Middle))
-            {
-                TabPage page = GetTabPage(pt);
-                if (page != null)
-                {
-                    ModContents.Item item = (ModContents.Item)page.Tag;
+            TabPage page = this.GetTabPage(pt);
+            if (page != null && (e.Button == System.Windows.Forms.MouseButtons.Right || e.Button == System.Windows.Forms.MouseButtons.Middle))
+            {                          
+                ModContents.Item item = (ModContents.Item)page.Tag;
 
-                    if (confirmOnClose)
-                    {
-                        if (MessageBox.Show("You are about to close " +
-                            this.TabPages[SelectedIndex].Text.TrimEnd() +
-                            " tab. Are you sure you want to continue?", "Confirm close",
-                            MessageBoxButtons.YesNo) == DialogResult.No)
-                            return;
-                    }
-                    if(item.OnTabClosed())
-                        TabPages.Remove(page);
-                    
-                }               
-                /*
-                //Fire Event to Client
-                if (this.OnClose != null)
+                if (confirmOnClose)
                 {
-                    OnClose(this, new CloseEventArgs(SelectedIndex));
-                }*/
+                    if (MessageBox.Show("You are about to close " +
+                        this.TabPages[SelectedIndex].Text.TrimEnd() +
+                        " tab. Are you sure you want to continue?", "Confirm close",
+                        MessageBoxButtons.YesNo) == DialogResult.No)
+                        return;
+                }
+                if(item.OnTabClosed())
+                    TabPages.Remove(page);                
             }
             base.OnMouseDown(e);
         }

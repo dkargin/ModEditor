@@ -19,6 +19,7 @@ namespace ModEditor
         }
 
         private int rows = 0;
+        static int rowHeight = 25;
 
         public Dictionary<string, EditorManager.FieldEditor> editors = new Dictionary<string,EditorManager.FieldEditor>();
 
@@ -44,8 +45,19 @@ namespace ModEditor
                     control.Dock = DockStyle.Fill;
                     if (control != null)
                     {
-                        this.dataTable.Controls.Add(new Label() { Text = member.Name }, 0, rows);
+                        var label = new Label() 
+                        { 
+                            Text = member.Name, 
+                            TextAlign = ContentAlignment.MiddleLeft, 
+                            //Dock= DockStyle.Fill, 
+                            AutoSize = true,
+                            BackColor = SystemColors.ControlLight,
+                        };
+                        this.dataTable.Controls.Add(label, 0, rows);
                         this.dataTable.Controls.Add(control, 1, rows);
+                        /*
+                        dataTable.RowStyles[rows].Height = rowHeight;
+                        dataTable.RowStyles[rows].SizeType = SizeType.Absolute;*/
                         editors.Add(member.Name, editor);
                         rows++;
                     }

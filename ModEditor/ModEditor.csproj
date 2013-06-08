@@ -66,9 +66,23 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Controllers\ModInfoController.cs" />
+    <Compile Include="Controllers\StringsController.cs" />
     <Compile Include="Controls\EditorManager.cs" />
+    <Compile Include="Controls\StringEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\StringEditor.Designer.cs">
+      <DependentUpon>StringEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\TabHostEx.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="FormSelect.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormSelect.Designer.cs">
+      <DependentUpon>FormSelect.cs</DependentUpon>
     </Compile>
     <Compile Include="FormAbout.cs">
       <SubType>Form</SubType>
@@ -81,10 +95,10 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="XNATool\GraphicsDeviceService.cs" />
-    <Compile Include="ItemExplorer.cs">
+    <Compile Include="Controls\ItemExplorer.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="ItemExplorer.Designer.cs">
+    <Compile Include="Controls\ItemExplorer.Designer.cs">
       <DependentUpon>ItemExplorer.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
@@ -99,10 +113,16 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XNATool\XNAWrap.cs" />
+    <EmbeddedResource Include="Controls\StringEditor.resx">
+      <DependentUpon>StringEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormSelect.resx">
+      <DependentUpon>FormSelect.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormAbout.resx">
       <DependentUpon>FormAbout.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="ItemExplorer.resx">
+    <EmbeddedResource Include="Controls\ItemExplorer.resx">
       <DependentUpon>ItemExplorer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
