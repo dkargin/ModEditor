@@ -27,10 +27,37 @@ namespace ModEditor
         }
 
         List<Item> items = new List<Item>();
+        public Item selected = null;
+
+        bool multiple = false;
+
+        ListBox listBox;
         
-        public FormSelect()
+        public FormSelect(bool multiple)
         {
+            SuspendLayout();
+            this.multiple = multiple;
+            if (multiple)
+            {
+                var control = new CheckedListBox();
+                control.ItemCheck += itemsList_ItemCheck;
+                listBox = control;                
+            }
+            else 
+            {
+                listBox = new ListBox();
+                listBox.SelectionMode = SelectionMode.One;
+                listBox.SelectedValueChanged += listBox_SelectedValueChanged;
+            }
+            listBox.Dock = DockStyle.Fill;
+            
+            ResumeLayout();
             InitializeComponent();
+        }
+
+        void listBox_SelectedValueChanged(object sender, EventArgs e)
+        {
+            this.selected = listBox.SelectedItem as Item;            
         }
 
         public void AddItem(Item item)
@@ -48,29 +75,47 @@ namespace ModEditor
             return false;
         }
 
+        private void AddItemToView(Item item)
+        {
+            if (multiple)
+            {
+                (listBox as CheckedListBox).Items.Add(item, item.selected);                   
+            }
+            else
+            {
+                listBox.Items.Add(item);
+                if (item.selected)
+                {
+                    listBox.SelectedItem = item;
+                    selected = item;
+                }
+            }
+        }
         public void UpdateList()
         {
-            itemsList.Items.Clear();
+            listBox.Items.Clear();
             foreach (var item in items)
             {
                 if (!ItemFiltered(item))
-                    itemsList.Items.Add(item, item.selected);                   
+                    AddItemToView(item);
             }
-        }
-
-        public CheckedListBox GetList()
-        {
-            return itemsList;
+            listBox.Sorted = true;
         }
 
         private void itemsList_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            var item = (itemsList.Items[e.Index] as Item);
+            var item = ((listBox as CheckedListBox).Items[e.Index] as Item);
             item.selected = (e.NewValue == CheckState.Checked);
         }
 
         private void filter_CheckedChanged(object sender, EventArgs e)
         {
+            UpdateList();
+        }
+
+        private void FormSelect_Load(object sender, EventArgs e)
+        {
+            areaContents.Controls.Add(listBox);
             UpdateList();
         }        
     }

@@ -6,13 +6,16 @@ using System.Windows.Forms;
 
 namespace ModEditor.Controllers
 {
-    public class ModInfoController : ModEditor.ModContents.Controller
+    public class ModInfoController : ModEditor.Controller
     {
         public ModInfoController(ModContents mod)
             : base(mod)
         {
             rootItem.name = "ModInfo";
             groupName = "ModInfo";
+
+            OverrideFieldObjectReference("ModImagePath_1920x1280", "Textures");
+            OverrideFieldObjectReference("PortraitPath", "Textures");
         }
 
         public override void ClearCache()
@@ -25,13 +28,13 @@ namespace ModEditor.Controllers
             throw new NotImplementedException();
         }
 
-        public override Control GenerateControl(ModEditor.ModContents.Item item)
+        public override Control GenerateControl(ModEditor.Item item)
         {
             if (item.target == null)
                 return null;
-            ItemExplorer explorer = new ItemExplorer();
+            ItemView explorer = new ItemView();
             Ship_Game.ModInformation targetObj = (Ship_Game.ModInformation)item.target;
-            explorer.Init(item, targetObj);
+            explorer.Init(typeof(Ship_Game.ModInformation), item);
             return explorer;
         }
 

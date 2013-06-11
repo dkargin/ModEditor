@@ -43,6 +43,6 @@ namespace ModEditor.Controls
             {
                 return pickString;
             }
-        }
+        }       
     }
 }

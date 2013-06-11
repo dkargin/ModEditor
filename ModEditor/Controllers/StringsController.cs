@@ -11,8 +11,9 @@ using System.Xml.Serialization;
 
 namespace ModEditor.Controllers
 {
-    public class StringsController : ModEditor.ModContents.Controller
+    public class StringsController : ModEditor.Controller
     {
+        static StringsController lastController;
         static DataTable globalStrings = new DataTable();
         static List<string> globalLanguages = new List<string>();
 
@@ -23,6 +24,7 @@ namespace ModEditor.Controllers
         public StringsController(ModContents mod)
             : base(mod)
         {
+            lastController = this;
             rootItem.name = "Strings";
             groupName = "Localization";
 
@@ -41,10 +43,7 @@ namespace ModEditor.Controllers
             return;
             DataRow row = globalStrings.Rows.Find(newToken);
             DataColumn column = globalStrings.Columns[e.Column.ColumnName];
-            if (column == null)
-            {
-                int w = 0;
-            }
+            
             if (row != null && column != null)
             {
                 row[column] = e.Row[e.Column];
@@ -88,9 +87,9 @@ namespace ModEditor.Controllers
 
         static string defaultLanguage = "English";
 
-        public static string GetLocString(int index)
+        public static string GetLocString(int token)
         {
-            return GetLocString(index, defaultLanguage);
+            return GetLocString(token, defaultLanguage);
         }
 
         public static string GetLocString(int token, string language)
@@ -153,7 +152,7 @@ namespace ModEditor.Controllers
             }
         }
 
-        public override ContextMenuStrip GenerateContextMenu(ModEditor.ModContents.Item item)
+        public override ContextMenuStrip GenerateContextMenu(ModEditor.Item item)
         {
             ContextMenuStrip result = new ContextMenuStrip();
             if (item.Equals(rootItem))
@@ -176,7 +175,7 @@ namespace ModEditor.Controllers
         // Show dialog with selecting active languages
         private void OnSelectLanguages(object sender, EventArgs e)
         {
-            using (FormSelect form = new FormSelect())
+            using (FormSelect form = new FormSelect(true))
             {
                 foreach (DataColumn column in localStrings.Columns)
                 {
@@ -196,7 +195,7 @@ namespace ModEditor.Controllers
         {
         }
         private BindingSource bindingSource = new BindingSource();
-        public override Control GenerateControl(ModEditor.ModContents.Item item)
+        public override Control GenerateControl(ModEditor.Item item)
         {
 
             DataGridView result = new DataGridView();
@@ -230,8 +229,7 @@ namespace ModEditor.Controllers
             int count = localStrings.Rows.Count;*/
             
             var row = localStrings.NewRow();
-            localStrings.Rows.Add(row);
-            
+            localStrings.Rows.Add(row);            
         }
 
 
@@ -248,11 +246,9 @@ namespace ModEditor.Controllers
                 var row = localStrings.Rows[e.RowIndex];
                 e.Value = row[e.ColumnIndex];
             }
-        }
-
-       
+        }       
         
-        void CreateNewString(int token)
+        public void CreateNewString(int token)
         {
             DataRow row = globalStrings.Rows.Find(token);
             if (row == null)
@@ -392,6 +388,49 @@ namespace ModEditor.Controllers
 
         public override void UpdateItems()
         {
+        }
+
+        public static DataTable LoadDataTable(int token)
+        {
+            DataTable result = new DataTable();
+            DataColumn column = result.Columns.Add("Language", typeof(string));
+            column.ReadOnly = true;
+            result.Columns.Add("Value", typeof(string));
+            foreach (var language in globalLanguages)
+            {
+                var row = result.NewRow();
+                row[0] = language;
+                row[1] = GetLocString(token, language);
+                result.Rows.Add(row);
+            }
+            return result;
+        }
+
+        public static bool TokenExists(int token)
+        {
+            return globalStrings.Rows.Find(token) != null;
+        }
+
+        public static void SetLocString(int token, string value)
+        {
+            SetLocString(token, value, defaultLanguage);
+        }
+
+        public static void SetLocString(int token, string value, string language)
+        {
+            if (lastController != null)
+            {
+                // 1. update local string
+                DataColumn column = lastController.localStrings.Columns[language];
+                DataColumn tokenColumn = lastController.localStrings.Columns[language];
+                DataRow row = lastController.localStrings.Rows.Find(token);
+                if (row != null)
+                {
+                    row[column] = value; ;
+                }
+                // 2. update global string
+                    // global string is updated due to event attached to localStrings table
+            }
         }
     }
 }

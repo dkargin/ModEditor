@@ -31,10 +31,10 @@
             this.okButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
             this.filterBase = new System.Windows.Forms.CheckBox();
-            this.itemsList = new System.Windows.Forms.CheckedListBox();
             this.filterAllMods = new System.Windows.Forms.CheckBox();
             this.filterCurrent = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.areaContents = new System.Windows.Forms.GroupBox();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -42,7 +42,7 @@
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.okButton.Location = new System.Drawing.Point(53, 338);
+            this.okButton.Location = new System.Drawing.Point(53, 259);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(75, 19);
             this.okButton.TabIndex = 25;
@@ -52,7 +52,7 @@
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(175, 338);
+            this.cancelButton.Location = new System.Drawing.Point(175, 259);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 19);
             this.cancelButton.TabIndex = 26;
@@ -68,15 +68,6 @@
             this.filterBase.Text = "Base";
             this.filterBase.UseVisualStyleBackColor = true;
             this.filterBase.CheckedChanged += new System.EventHandler(this.filter_CheckedChanged);
-            // 
-            // itemsList
-            // 
-            this.itemsList.FormattingEnabled = true;
-            this.itemsList.Location = new System.Drawing.Point(1, 57);
-            this.itemsList.Name = "itemsList";
-            this.itemsList.Size = new System.Drawing.Size(289, 274);
-            this.itemsList.TabIndex = 29;
-            this.itemsList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.itemsList_ItemCheck);
             // 
             // filterAllMods
             // 
@@ -114,17 +105,29 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Filter";
             // 
+            // areaContents
+            // 
+            this.areaContents.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.areaContents.Location = new System.Drawing.Point(1, 64);
+            this.areaContents.Name = "areaContents";
+            this.areaContents.Size = new System.Drawing.Size(291, 189);
+            this.areaContents.TabIndex = 33;
+            this.areaContents.TabStop = false;
+            // 
             // FormSelect
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(292, 361);
+            this.ClientSize = new System.Drawing.Size(292, 282);
+            this.Controls.Add(this.areaContents);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.itemsList);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
             this.Name = "FormSelect";
             this.Text = "Select";
+            this.Load += new System.EventHandler(this.FormSelect_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
@@ -137,9 +140,9 @@
         private System.Windows.Forms.Button okButton;
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.CheckBox filterBase;
-        private System.Windows.Forms.CheckedListBox itemsList;
         private System.Windows.Forms.CheckBox filterAllMods;
         private System.Windows.Forms.CheckBox filterCurrent;
         private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.GroupBox areaContents;
     }
 }

@@ -56,7 +56,7 @@
             // 
             // pickString
             // 
-            this.pickString.Location = new System.Drawing.Point(62, 0);
+            this.pickString.Location = new System.Drawing.Point(62, 1);
             this.pickString.Name = "pickString";
             this.pickString.Size = new System.Drawing.Size(26, 19);
             this.pickString.TabIndex = 3;
@@ -71,6 +71,7 @@
             this.Controls.Add(this.valueText);
             this.Controls.Add(this.valueToken);
             this.Margin = new System.Windows.Forms.Padding(0);
+            this.MinimumSize = new System.Drawing.Size(0, 21);
             this.Name = "StringEditor";
             this.Size = new System.Drawing.Size(185, 21);
             this.Load += new System.EventHandler(this.StringEditor_Load);

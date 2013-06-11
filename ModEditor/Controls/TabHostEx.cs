@@ -134,8 +134,8 @@ namespace ModEditor.Controls
             Point pt = new Point(e.X, e.Y);
             TabPage page = this.GetTabPage(pt);
             if (page != null && (e.Button == System.Windows.Forms.MouseButtons.Right || e.Button == System.Windows.Forms.MouseButtons.Middle))
-            {                          
-                ModContents.Item item = (ModContents.Item)page.Tag;
+            {
+                ModEditor.Item item = (ModEditor.Item)page.Tag;
 
                 if (confirmOnClose)
                 {

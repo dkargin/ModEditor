@@ -1,6 +1,7 @@
-﻿namespace ModEditor
+﻿using ModEditor.Controls;
+namespace ModEditor
 {
-    partial class ItemExplorer
+    partial class ItemView
     {
 
         #region Component Designer generated code
@@ -8,7 +9,7 @@
         {
             System.Windows.Forms.Panel dataPanel;
             System.Windows.Forms.TableLayoutPanel headerContainer;
-            this.dataTable = new System.Windows.Forms.TableLayoutPanel();
+            this.dataTable = new PropertyGridExplorer();
             this.labelPath = new System.Windows.Forms.Label();
             this.labelType = new System.Windows.Forms.Label();
             this.valueType = new System.Windows.Forms.TextBox();
@@ -145,7 +146,7 @@
         private System.Windows.Forms.TextBox valuePath;
         private System.Windows.Forms.Label labelPath;
         private System.Windows.Forms.Label labelType;
-        private System.Windows.Forms.TableLayoutPanel dataTable;
+        private PropertyGridExplorer dataTable;
         private System.Windows.Forms.Panel panel1;
     }
 }

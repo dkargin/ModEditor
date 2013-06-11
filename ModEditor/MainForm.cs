@@ -29,7 +29,7 @@ namespace ModEditor
         public MainForm()
         {            
             InitializeComponent();
-            EditorManager.Init();
+            PropertyGridExplorer.Init();
             /// Strings test
             //string source = "Laser weapons factory. Provides production bonus ${Building.SoftAttack} per assigned colonist. Also can defend colony using its production directly from the assembly line, shooting orbital targets at range ${Weapon.Range}. Needs ${Building.Maintenance} maintance per turn.";
             //Ship_Game.Building building = new Ship_Game.Building();
@@ -86,7 +86,7 @@ namespace ModEditor
 
                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    contentsMod = ModContents.CreateNewMod(ModContentsTree, dialog.FileName);
+                    contentsMod = ModContents.CreateNewMod(ModContentsTree, dialog.FileName, contentsBase);
                     contentsMod.UpdateUI();
                     contentsBase.UpdateUI();
                 }
@@ -144,7 +144,7 @@ namespace ModEditor
             this.statusModPath.Text = ModEntryPath;
             try
             {
-                contentsMod = new ModContents(ModContentsTree);
+                contentsMod = new ModContents(ModContentsTree, contentsBase);
                 contentsMod.LoadMod(ModEntryPath);
 
                 contentsBase.UpdateUI();
@@ -179,7 +179,7 @@ namespace ModEditor
 
             LoadGameBackend();
 
-            contentsBase = new ModContents(ModContentsTree);
+            contentsBase = new ModContents(ModContentsTree, null);
             contentsBase.SetName("Base");
             Status = EditorStatus.Empty;
         }
@@ -206,7 +206,12 @@ namespace ModEditor
             return null;
         }
 
-        public void ExploreItem(ModEditor.ModContents.Item item)
+        static public void LogString(string message)
+        {
+
+        }
+
+        public void ExploreItem(ModEditor.Item item)
         {
             if (item.page == null)
             {
@@ -236,7 +241,7 @@ namespace ModEditor
             if (e.Button == MouseButtons.Left)
             {
                 TreeNode selected = e.Node;
-                ModEditor.ModContents.Item item = selected.Tag as ModEditor.ModContents.Item;                
+                ModEditor.Item item = selected.Tag as ModEditor.Item;                
                 if (selected != null && item != null)
                 {
                     ExploreItem(item);
@@ -254,7 +259,7 @@ namespace ModEditor
 
                 if (selected != null && selected.Tag != null )
                 {
-                    ModContents.Item item = selected.Tag as ModContents.Item;
+                    ModEditor.Item item = selected.Tag as ModEditor.Item;
                     if(item != null)
                     {
                         ContextMenuStrip menu = item.GenerateContextMenu();

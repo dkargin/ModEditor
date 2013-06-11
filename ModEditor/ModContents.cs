@@ -14,7 +14,300 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace ModEditor
-{    
+{
+    /// <summary>
+    /// Wraps item, i.e Tech, Device, or generic data. 
+    /// Stores active ui information concerned to selected node
+    /// </summary>
+    public class Item
+    {
+        public Controller controller;
+        public Object target;
+        public Item prev, next;
+
+        public bool isBase;
+        public string name;
+        protected string sourcePath;
+
+        public TreeNode node;           // Assigned tree node
+        public TabPage page;            // Assigned tab page
+
+        public DateTime fileTime;       // Cached time to check if file was modified
+
+        public string Path
+        {
+            get
+            {
+                return sourcePath;
+            }
+        }
+
+        public Item(Object item, Controller controller, string path)
+        {
+            target = item;
+            this.controller = controller;
+            this.sourcePath = path;
+        }
+
+        public bool IsBase()
+        {
+            return controller.IsBase();
+        }
+
+        public bool OnTabClosed()
+        {
+            page = null;
+            return true;
+        }
+
+        // Set source path. TODO: replace this function
+        public void SetPath(string path)
+        {
+            sourcePath = path;
+            try
+            {
+                fileTime = new FileInfo(path).LastWriteTime;
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public bool FileExists()
+        {
+            FileInfo info = new FileInfo(sourcePath);
+            return info.Exists;
+        }
+
+        public bool ModifiedOutside()
+        {
+            FileInfo info = new FileInfo(sourcePath);
+            var newTime = info.LastWriteTime;
+            if (newTime.CompareTo(fileTime) > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public void Refresh()
+        {
+            controller.ReloadItem(this);
+        }
+
+        public bool Modded()
+        {
+            return next != null;
+        }
+
+        public virtual Object getTarget()
+        {
+            return target;
+        }
+
+        public ContextMenuStrip GenerateContextMenu()
+        {
+            return controller.GenerateContextMenu(this);
+        }
+
+        public Control GenerateControl()
+        {
+            return controller.GenerateControl(this);
+        }
+
+        // remove links with other items
+        public void UnLink()
+        {
+            if (prev != null)
+                prev.next = next;
+            if (next != null)
+                next.prev = prev;
+        }
+
+        public bool HasVariants()
+        {
+            return prev != null || next != null;
+        }
+
+        public void UpdateUI()
+        {
+            if (Modded() && node != null)
+                node.BackColor = System.Drawing.Color.YellowGreen;
+        }
+
+        public string GetPath()
+        {
+            return sourcePath;
+        }
+        public TabPage GetTabPage()
+        {
+            return page;
+        }
+    }
+
+    /// <summary>
+    /// Defines methods to interact with specific mod objects
+    /// </summary>
+    public abstract class Controller
+    {
+        public Item rootItem;
+        protected string groupName = "unnamed";
+
+        protected System.Type targetType;
+
+        public bool isBase;
+
+        public Dictionary<string, List<ModEditorAttribute>> customAttributes = new Dictionary<string, List<ModEditorAttribute>>();
+        // Local cache for items created by this controller/mod
+        protected Dictionary<string, Item> localCache = new Dictionary<string, Item>();
+
+        public List<string> fieldStringToken = new List<string>();
+
+        protected ModContents mod;
+
+        public ModContents Mod
+        {
+            get
+            {
+                return mod;
+            }
+        }
+
+        public Controller(ModContents mod)
+        {
+            this.mod = mod;
+            rootItem = new Item(null, this, "");
+            rootItem.controller = this;
+        }
+
+        public bool IsBase()
+        {
+            return isBase;
+        }
+
+        // Add custom field attribute to modify ItemExplorer sheet generation
+        public void AddCustomAttribute(string fieldName, ModEditorAttribute attrib)
+        {
+            if (!customAttributes.ContainsKey(fieldName))
+                customAttributes.Add(fieldName, new List<ModEditorAttribute>());
+            customAttributes[fieldName].Add(attrib);
+        }
+        // Mark field as "string token"            
+        public void OverrideFieldLocString(string fieldName)
+        {
+            AddCustomAttribute(fieldName, new LocStringToken());
+        }
+        // Mark field as "object reference"            
+        public void OverrideFieldObjectReference(string fieldName, string group)
+        {
+            AddCustomAttribute(fieldName, new ObjectReference(group));
+        }
+        // Ignore field
+        public void IgnoreField(string fieldName)
+        {
+            AddCustomAttribute(fieldName, new IgnoreByEditor());
+        }
+
+
+        public virtual Item CreateSpec(Object obj, string path)
+        {
+            return new Item(obj, this, path);
+        }
+
+        public string GetGroupFolder()
+        {
+            return groupName;
+        }
+
+        // Do not sure what does it do
+        public abstract void ClearCache();
+
+        public virtual Dictionary<string, Item> GetItems()
+        {
+            return null;
+        }
+
+        public Dictionary<string, Item> GetLocalItems()
+        {
+            return localCache;
+        }
+
+        // Obtain all the attributes within spedified field
+        public List<ModEditorAttribute> GetFieldAttribute(System.Reflection.FieldInfo fieldInfo)
+        {
+            List<ModEditorAttribute> result = new List<ModEditorAttribute>();
+
+            // Get attributes from local override list
+            if (customAttributes.ContainsKey(fieldInfo.Name))
+            {
+                var list = customAttributes[fieldInfo.Name];
+                result.AddRange(list);
+            }
+
+            // Get attributes from class definition                
+            foreach (ModEditorAttribute attribute in fieldInfo.GetCustomAttributes(true))
+            {
+                result.Add(attribute);
+            }
+
+            return result;
+        }
+
+        // Generate control to edit item contents. Most times it is ItemExplorer property grid
+        public virtual Control GenerateControl(Item item)
+        {
+            if (item.Equals(rootItem))
+                return null;
+            if (targetType == null)
+                return null;
+            ItemView explorer = new ItemView();
+            explorer.Init(targetType, item);
+            return explorer;
+        }
+
+        public abstract void ObtainModData(string basePath, bool isBase);
+        public abstract void PopulateModOverview(TreeNodeCollection root);
+        public abstract void Save(string dir);
+
+        public abstract void UpdateItems();
+
+        public virtual ContextMenuStrip GenerateContextMenu(Item item)
+        {
+            return null;
+        }
+
+        // Reloads item from file
+        public virtual void ReloadItem(Item item)
+        {
+            FileInfo info = new FileInfo(item.Path);
+            var newTime = info.LastWriteTime;
+            item.fileTime = newTime;
+        }
+
+        // Opens system editor
+        public virtual bool OpenItemFile(Item item)
+        {
+            if (item.Path != "")
+            {
+                try
+                {
+                    string path = mod.RootPath + "/" + item.Path;
+                    System.Diagnostics.Process.Start(path);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Cannot open editor for file \"" + item.Path + "\" : \n\n" + e.ToString());
+                }
+            }
+            return false;
+        }
+        // Check group for modifications
+        public virtual void CheckExternalModifications()
+        {
+        }
+    }
+
     public class ModContents
     {        
         // Editor references to other mods
@@ -22,8 +315,10 @@ namespace ModEditor
 
         public interface Explorer
         {
-            void ExploreItem(ModEditor.ModContents.Item item);
+            void ExploreItem(Item item);
         }
+
+        ModContents next, prev;
 
         public bool mergeReferences;        
 
@@ -34,7 +329,7 @@ namespace ModEditor
 
         public Ship_Game.ModInformation modInfo;
 
-        public Dictionary<string, ModContents.Controller> controllers = new Dictionary<string, ModContents.Controller>();
+        public Dictionary<string, Controller> controllers = new Dictionary<string, Controller>();
 
         public enum State
         {
@@ -42,48 +337,7 @@ namespace ModEditor
             Unloaded,
             Loaded 
         }
-        // Writes data to temporary file
-        public class SafeWriter
-        {
-            FileStream stream;
-
-            public FileStream Stream
-            {
-                get
-                {
-                    return stream;
-                }
-            }
-
-            //public FI.OpenRead();
-            FileInfo tmpFileInfo;
-            FileInfo fileInfo;
-
-            public SafeWriter(FileInfo info)
-            {
-                this.fileInfo = info;
-                tmpFileInfo = new FileInfo(info.FullName + ".tmp");
-                try
-                {
-                    tmpFileInfo.Delete();
-                }catch(Exception)
-                {
-                }
-                stream = tmpFileInfo.OpenWrite();
-            }
-            // close stream and copy data from temporary file, deleting temporary file
-            public void Finish()
-            {
-                if (stream != null)
-                {
-                    stream.Close();
-                    stream.Dispose();                    
-                    tmpFileInfo.CopyTo(fileInfo.FullName, true);
-                    tmpFileInfo.Delete();
-                }
-            }
-        }
-
+        
         public State state = State.Empty;
 
         ModEditor.Controllers.ModInfoController modInfoController;
@@ -92,10 +346,18 @@ namespace ModEditor
         // Directory with mod data
         protected string modRootPath = "Contents";
 
-        public ModContents(TreeView treeView)
+        public ModContents(TreeView treeView, ModContents baseMod)
         {
             this.treeView = treeView;
-            
+            prev = baseMod;
+
+            if (baseMod != null)
+            {
+                if (baseMod.next != null)
+                    throw new Exception("base mod is already linked");
+                baseMod.next = this;
+            }
+
             rootTreeNode = new TreeNode("Root Node");
             treeView.Nodes.Add(rootTreeNode);
 
@@ -107,9 +369,9 @@ namespace ModEditor
              */
         }
 
-        public static ModContents CreateNewMod(TreeView treeView, string modPath)
+        public static ModContents CreateNewMod(TreeView treeView, string modPath, ModContents baseMod)
         {
-            ModContents result = new ModContents(treeView);
+            ModContents result = new ModContents(treeView, baseMod);
             result.modRootPath = modPath;
             result.modInfo = new Ship_Game.ModInformation()
             {
@@ -128,15 +390,15 @@ namespace ModEditor
         {
             modInfoController = new ModEditor.Controllers.ModInfoController(this);
             stringsController = new ModEditor.Controllers.StringsController(this);
-            AddController(new ModContents.ArtifactsSpec(this));
-            AddController(new ModContents.EventsGroup(this));
-            AddController(new ModContents.HullsGroup(this));
-            AddController(new ModContents.BuildingSpec(this));
-            AddController(new ModContents.ModuleSpec(this));
-            AddController(new ModContents.TechSpec(this));
-            AddController(new ModContents.TexturesGroup(this));
-            AddController(new ModContents.TroopSpec(this));
-            AddController(new ModContents.WeaponGroup(this));
+            AddController(new ModEditor.Controllers.ArtifactsSpec(this));
+            AddController(new ModEditor.Controllers.EventsGroup(this));
+            AddController(new ModEditor.Controllers.HullsGroup(this));
+            AddController(new ModEditor.Controllers.BuildingSpec(this));
+            AddController(new ModEditor.Controllers.ModuleSpec(this));
+            AddController(new ModEditor.Controllers.TechSpec(this));
+            AddController(new ModEditor.Controllers.TexturesGroup(this));
+            AddController(new ModEditor.Controllers.TroopSpec(this));
+            AddController(new ModEditor.Controllers.WeaponGroup(this));
 
             AddController(modInfoController);
             AddController(stringsController);
@@ -181,6 +443,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
+                MainForm.LogString(e.Message);
             }
             return false;
         }
@@ -198,6 +461,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
+                MainForm.LogString(e.Message);
             }
             return false;
         }
@@ -213,7 +477,6 @@ namespace ModEditor
         {
             return fieldInfo.GetValue(item.target);
         }
-
         // Check all items for external modificatios
         public void CheckExternalModifications()
         { 
@@ -273,6 +536,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
+                MainForm.LogString(e.Message);
             }
             UpdateUI();
         }
@@ -308,7 +572,50 @@ namespace ModEditor
                 controller.Value.UpdateItems();                
             } 
         }
+
         #region Tools
+        // Writes data to temporary file
+        public class SafeWriter
+        {
+            FileStream stream;
+
+            public FileStream Stream
+            {
+                get
+                {
+                    return stream;
+                }
+            }
+
+            //public FI.OpenRead();
+            FileInfo tmpFileInfo;
+            FileInfo fileInfo;
+
+            public SafeWriter(FileInfo info)
+            {
+                this.fileInfo = info;
+                tmpFileInfo = new FileInfo(info.FullName + ".tmp");
+                try
+                {
+                    tmpFileInfo.Delete();
+                }
+                catch (Exception)
+                {
+                }
+                stream = tmpFileInfo.OpenWrite();
+            }
+            // close stream and copy data from temporary file, deleting temporary file
+            public void Finish()
+            {
+                if (stream != null)
+                {
+                    stream.Close();
+                    stream.Dispose();
+                    tmpFileInfo.CopyTo(fileInfo.FullName, true);
+                    tmpFileInfo.Delete();
+                }
+            }
+        }
 
         public static FileInfo[] GetFilesFromDirectory(string DirPath)
         {
@@ -417,296 +724,13 @@ namespace ModEditor
             
             return result;        
         }
-        #endregion
-        /// <summary>
-        /// Wraps item, i.e Tech, Device, or generic data. 
-        /// Stores active ui information concerned to selected node
-        /// </summary>
-        public class Item
+
+        public Controller GetGroupController(string group)
         {
-            public Controller controller;
-            public Object target;            
-            public Item prev, next;
-            
-            public bool isBase;
-            public string name;
-            protected string sourcePath;
-
-            public TreeNode node;       // Assigned tree node
-            public TabPage page;        // Assigned tab page
-
-            public DateTime fileTime;   // Cached time to check if file was modified
-
-            public string Path
-            {
-                get
-                {
-                    return sourcePath;
-                }
-            }            
-
-            public Item(Object item, Controller controller, string path)
-            {
-                target = item;
-                this.controller = controller;
-                this.sourcePath = path;
-            }
-
-            public bool IsBase()
-            {
-                return controller.IsBase();
-            }
-
-            public bool OnTabClosed()
-            {
-                page = null;
-                return true;
-            }
-
-            // Set source path. TODO: replace this function
-            public void SetPath(string path)
-            {
-                sourcePath = path;
-                try
-                {
-                    fileTime = new FileInfo(path).LastWriteTime;
-                }
-                catch (Exception)
-                {
-                }
-            }
-
-            public bool FileExists()
-            {
-                FileInfo info = new FileInfo(sourcePath);
-                return info.Exists;
-            }
-
-            public bool ModifiedOutside()
-            {
-                FileInfo info = new FileInfo(sourcePath);
-                var newTime = info.LastWriteTime;
-                if (newTime.CompareTo(fileTime) > 0)
-                {
-                    return true;
-                }
-                return false;
-            }
-
-            public void Refresh()
-            {
-                controller.ReloadItem(this);
-            }
-
-            public bool Modded()
-            {
-                return next != null;
-            }
-
-            public virtual Object getTarget()
-            {
-                return target;
-            }
-
-            public ContextMenuStrip GenerateContextMenu()
-            {
-                return controller.GenerateContextMenu(this);
-            }
-
-            public Control GenerateControl()
-            {
-                return controller.GenerateControl(this);
-            }
-
-            // remove links with other items
-            public void UnLink()
-            {
-                if (prev != null)
-                    prev.next = next;
-                if (next != null)
-                    next.prev = prev;
-            }
-
-            public bool HasVariants()
-            {
-                return prev != null || next != null;
-            }
-
-            public void UpdateUI()
-            {
-                if (Modded() && node != null)
-                    node.BackColor = System.Drawing.Color.YellowGreen;
-            }
-             
-            public string GetPath()
-            {
-                return sourcePath;
-            }
-            public TabPage GetTabPage()
-            {
-                return page;
-            }
+            if(controllers.ContainsKey(group))                
+                return this.controllers[group];
+            return null;
         }
-
-        
-        /// <summary>
-        /// Defines methods to interact with specific mod objects
-        /// </summary>
-        public abstract class Controller
-        {
-            public Item rootItem;
-            protected string groupName = "unnamed";
-
-            public bool isBase;
-
-            public Dictionary<string, List<ModEditor.Controls.EditorManager.ModEditorAttribute>> customAttributes = new Dictionary<string, List<ModEditor.Controls.EditorManager.ModEditorAttribute>>();
-
-            public List<string> fieldStringToken = new List<string>();
-
-            public bool IsBase()
-            {
-                return isBase;
-            }
-
-            protected ModContents mod;
-
-            public Controller(ModContents mod)
-            {
-                this.mod = mod;
-                rootItem = new Item(null, this, "");
-                rootItem.controller = this;
-            }
-
-            public void AddCustomAttribute(string fieldName, EditorManager.ModEditorAttribute attrib)
-            {
-                if (!customAttributes.ContainsKey(fieldName))
-                    customAttributes.Add(fieldName, new List<EditorManager.ModEditorAttribute>());
-                customAttributes[fieldName].Add(attrib);
-            }
-
-            
-            // Mark field as "string token"            
-            public void AddLocString(string fieldName)
-            {
-                AddCustomAttribute(fieldName, new EditorManager.LocStringToken());
-            }
-
-            // Mark field as "object reference"            
-            public void AddLocString(string fieldName, string group)
-            {
-                AddCustomAttribute(fieldName, new EditorManager.ObjectReference(group));
-            }
-
-            public virtual Control GenerateControl(Item item)
-            {
-                return null;
-            }
-
-            public virtual Item CreateSpec(Object obj, string path)
-            {
-                return new Item(obj, this, path);
-            }
-            
-            public string GetGroupFolder()
-            {
-                return groupName;
-            }
-
-            public abstract void ClearCache();
-
-            protected virtual bool SkipField(System.Reflection.FieldInfo fieldInfo)
-            {
-                return false;
-            }
-
-            protected List<EditorManager.ModEditorAttribute> GetFieldAttribute(System.Reflection.FieldInfo fieldInfo)
-            {
-                List<EditorManager.ModEditorAttribute> result = new List<EditorManager.ModEditorAttribute>();
-
-                if (customAttributes.ContainsKey(fieldInfo.Name))
-                {
-                    var list = customAttributes[fieldInfo.Name];
-                    result.AddRange(list);
-                }
-
-                try
-                {
-                    foreach (EditorManager.ModEditorAttribute attribute in fieldInfo.GetCustomAttributes(true))
-                    {
-                        result.Add(attribute);
-                    }
-                }
-                catch(Exception e)
-                {
-                }
-                return result;
-            }
-
-            protected virtual ModEditor.Controls.EditorManager.FieldEditor GenerateOverridedFieldEditor(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
-            {
-                foreach (EditorManager.ModEditorAttribute attrib in GetFieldAttribute(fieldInfo))
-                {
-                    var editor = attrib.GenerateEditor(fieldInfo, item);
-                    if (editor != null)
-                        return editor;
-                }                
-                return null;
-            }
-
-            public virtual ModEditor.Controls.EditorManager.FieldEditor GenerateFieldEditor(System.Reflection.FieldInfo fieldInfo, ModContents.Item item)
-            {
-                if (SkipField(fieldInfo))
-                    return null;
-                EditorManager.FieldEditor editor = GenerateOverridedFieldEditor(fieldInfo, item);
-                if (editor != null)
-                    return editor;
-
-                return EditorManager.generateControl(fieldInfo, item);
-            }
-            // Create context menu for treeview item selection
-            public virtual ContextMenuStrip GenerateContextMenu(Item item)
-            {
-                return null;
-            }
-
-            public abstract void ObtainModData(string basePath, bool isBase);
-            public abstract void PopulateModOverview(TreeNodeCollection root);
-            public abstract void Save(string dir);
-
-            public abstract void UpdateItems();
-
-            // Reloads item from file
-            public virtual void ReloadItem(Item item)
-            {
-                FileInfo info = new FileInfo(item.Path);
-                var newTime = info.LastWriteTime;
-                item.fileTime = newTime;                
-            }
-
-            // Opens system editor
-            public virtual bool OpenItemFile(Item item)
-            {
-                if (item.Path != "")
-                {
-                    try
-                    {
-                        string path = mod.RootPath + "/" + item.Path;
-                        System.Diagnostics.Process.Start(path);
-                        return true;
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show("Cannot open editor for file \"" + item.Path + "\" : \n\n" + e.ToString());
-                    }
-                }
-                return false;
-            }
-            // Check group for modifications
-            public virtual void CheckExternalModifications()
-            {
-            }
-        }
-
         public interface EditAction
         {
             void Apply();
@@ -718,7 +742,7 @@ namespace ModEditor
         {
             public Item item;
             public void Apply()
-            { }            
+            { }
             public void Undo()
             { }
             public string Name()
@@ -730,442 +754,7 @@ namespace ModEditor
         Queue<EditAction> actionsList;
 
         public void Undo() { }
-        public void Redo() { }
-
-        
-        
-        public abstract class ControllerSpec<Target> : Controller
-        {
-            protected Type targetType = typeof(Target);
-            protected string fileExtension = ".xml";
-            protected int lastNewIndex = 0;
-            // Global items cache            
-            public static Dictionary<string, Item> globalCache = new Dictionary<string, Item>();
-            // Local cache for items created by this mod
-            public Dictionary<string, Item> localCache = new Dictionary<string, Item>();
-
-            public XmlSerializer serializer;
-
-            XmlWriterSettings settings = new XmlWriterSettings() { OmitXmlDeclaration = true, Indent = true, IndentChars = "\t"};
-            
-            public ControllerSpec(ModContents mod)
-                :base(mod)
-            {                
-                XmlAttributeOverrides overrides = new XmlAttributeOverrides();
-                overrides.Add(typeof(Target), new XmlAttributes(){XmlIgnore = true});
-                serializer = new XmlSerializer(typeof(Target));
-            }
-
-            public override void UpdateItems()
-            {
-                foreach (var record in localCache)
-                {
-                    record.Value.UpdateUI();
-                }
-            }
-
-            public override void ClearCache()
-            {
-                localCache.Clear();
-            }
-
-            // Generate new item name
-            public String GetNewName(string baseName)
-            {
-                string result = "";
-                while (true)
-                {
-                    lastNewIndex++;
-                    result = baseName + lastNewIndex.ToString();
-                    if (!globalCache.ContainsKey(result))
-                        return result;
-                }
-            }
-
-            public override ContextMenuStrip GenerateContextMenu(Item item)
-            {
-                ContextMenuStrip result = new ContextMenuStrip();
-                if (item.Equals(rootItem) )
-                {
-                    if (rootItem.isBase)
-                        return null;
-                    result.Items.Add("New", null, OnNewItem);
-                }
-                else
-                {
-                    result.Items.Add("Edit", null, (object sender, EventArgs e) => { this.OpenItemFile(item); });
-                    result.Items.Add("Copy", null, (object sender, EventArgs e) => { OnCopyItem(item); });
-                    if(!item.isBase)
-                        result.Items.Add("Delete", null, (object sender, EventArgs e) => { OnDeleteItem(item); });
-                }
-                return result;
-            }
-
-            private void OnDeleteItem(Item item)
-            {
-                try
-                {
-                    localCache.Remove(item.name);
-                    item.UnLink();
-                    if (item.HasVariants())
-                        globalCache.Remove(item.name);
-                    // remove it from treeview
-                    if(item.node != null)
-                        item.node.Remove();
-                    // remove it from open tabs
-                    if (item.page != null)
-                        (item.page.Parent as TabControl).TabPages.Remove(item.page);
-                }
-                catch (Exception)
-                {
-                }
-            }
-
-            private void OnCopyItem(Item item)
-            {
-                if (item.isBase)
-                {
-                    // TODO: create item for mod
-                }
-            }
-
-            protected virtual Target CreateObject()
-            {
-                return default(Target);
-            }
-
-            private void OnNewItem(object sender, EventArgs e)
-            {
-
-            }
-
-            public abstract Dictionary<string, Target> GetStorage();
-
-            public virtual XmlSerializer GetSerializer()
-            {
-                return new XmlSerializer(typeof(Target));
-            }
-
-            public void SaveItem(Item item, string rootDir)
-            {
-                string path = rootDir + "/" + GetGroupFolder() + "/" + item.name + ".xml";
-                // Ensure directory exists
-                System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path));
-                FileInfo FI = new FileInfo(path);                
-                FI.Delete();
-                var writer = XmlWriter.Create(FI.OpenWrite(), settings);                
-                Target value = (Target)item.target;
-                serializer.Serialize(writer, value);
-                writer.Close();
-            }
-
-            public override void Save(string rootDir)
-            {               
-                XmlSerializer serializer = GetSerializer();
-                
-                
-                if(serializer == null)
-                    return;
-                var data = GetStorage();
-
-                System.IO.Directory.CreateDirectory(rootDir + "/" + GetGroupFolder());
-
-                foreach (var item in localCache)
-                {
-                    SaveItem(item.Value, rootDir);
-                }
-            }
-
-            public override Control GenerateControl(Item item)
-            {
-                if (item.Equals(rootItem))
-                    return null;
-                ItemExplorer explorer = new ItemExplorer();
-                Target targetObj = (Target)item.target;
-                explorer.Init(item, targetObj);
-                return explorer;
-            }
-
-            /// <summary>
-            /// Iterate through cache and show data
-            /// </summary>
-            /// <param name="root"></param>
-            public override void PopulateModOverview(TreeNodeCollection root)
-            {
-                TreeNode groupNode = null;
-                string folder = this.GetGroupFolder();
-                if (root.ContainsKey(folder))
-                    groupNode = root[folder];
-                else
-                {
-                    groupNode = new TreeNode(folder);
-                    root.Add(groupNode);
-                }
-
-                groupNode.Tag = rootItem;
-                rootItem.node = groupNode;
-
-                foreach (var entry in localCache)
-                {
-                    if (entry.Value.node == null)
-                    {
-                        TreeNode node = new TreeNode(entry.Key);
-                        entry.Value.node = node;
-                        node.Tag = entry.Value;
-                        groupNode.Nodes.Add(node);
-                    }                    
-                }
-            }
-            /*
-            public virtual string GetSourceExtension()
-            {
-                return ".xml";
-            }*/
-            /// <summary>
-            /// Iterate through all items in dictionary and add them to overview
-            /// </summary> 
-            public override void ObtainModData(string basePath, bool isBase)
-            {
-                this.isBase = isBase;
-
-                var data = GetStorage();
-               
-                foreach (var entry in data)
-                {                   
-                    Item item = null;
-                    string itemPath = this.GetGroupFolder() + "/" + entry.Key + fileExtension;
-                    if (globalCache.ContainsKey(entry.Key))
-                    {
-                        Item oldItem = globalCache[entry.Key];
-                        // found the same item
-                        if (oldItem.target.Equals(entry.Value))
-                            continue;
-
-                        item = CreateSpec(entry.Value, itemPath);
-                        item.name = entry.Key;
-                        
-                        localCache.Add(entry.Key, item);
-                        item.prev = oldItem;
-                        oldItem.next = item;
-
-                        globalCache[entry.Key] = item;
-                    }
-                    else
-                    {
-                        /// add item to both global and local cache
-                        item = CreateSpec(entry.Value, itemPath);
-                        item.name = entry.Key;
-                        item.isBase = isBase;
-                        globalCache.Add(entry.Key, item);
-                        localCache.Add(entry.Key, item);
-                    }                                   
-                }
-            }
-        }       
-
-        public class WeaponGroup : ControllerSpec<Ship_Game.Gameplay.Weapon>
-        {
-            public WeaponGroup(ModContents mod)
-                : base(mod)
-            { 
-                this.groupName = "Weapons";
-
-                //fieldStringToken.Add(
-                serializer = Ship_Game.ResourceManager.weapon_serializer; 
-            }
-            
-            public override Dictionary<string, Ship_Game.Gameplay.Weapon> GetStorage()
-            {
-                return Ship_Game.ResourceManager.WeaponsDict;
-            }
-
-            override protected Ship_Game.Gameplay.Weapon CreateObject()
-            {
-                return new Ship_Game.Gameplay.Weapon();
-            }
-        }
-
-        public class TexturesGroup : ControllerSpec<Texture2D>
-        {
-            public TexturesGroup(ModContents mod)
-                : base(mod)
-            {
-                fileExtension = ".xnb";
-                groupName = "Textures";
-                serializer = null;
-            }
-
-            public override Dictionary<string, Texture2D> GetStorage()
-            {
-                return Ship_Game.ResourceManager.TextureDict;
-            }
-
-            override protected Texture2D CreateObject()
-            {
-                return null;
-            }
-
-            public override void Save(string rootDir)
-            {
-                var data = GetStorage();
-
-                System.IO.Directory.CreateDirectory(rootDir + "/" + GetGroupFolder());
-
-                foreach (var record in localCache)
-                {
-                    string path = rootDir + "/" + GetGroupFolder() + "/" + record.Key + this.fileExtension;
-                    var item = record.Value;
-                    if (item.FileExists())
-                    {
-                        File.Copy(item.Path, path);
-                    }
-                    /*
-                    FileInfo FI = new FileInfo(path);
-                    FileStream stream = FI.OpenWrite();
-                    Target value = (Target)item.Value.target;
-                    serializer.Serialize(stream, value);
-                    stream.Close();
-                    stream.Dispose();*/
-                }
-            }
-        }
-
-        public class EventsGroup : ControllerSpec<Ship_Game.ExplorationEvent>
-        {
-            public EventsGroup(ModContents mod)
-                : base(mod)
-            {
-                //serializer = Ship_Game.ResourceManager.weapon_serializer;
-                groupName = "Exploration Events";
-            }
-            
-            public override Dictionary<string, Ship_Game.ExplorationEvent> GetStorage()
-            {
-                return Ship_Game.ResourceManager.EventsDict;
-            }
-            override protected Ship_Game.ExplorationEvent CreateObject()
-            {
-                return new Ship_Game.ExplorationEvent();
-            }
-        }
-
-        /*
-        public class RacesGroup : ControllerSpec<Ship_Game.ShipData>
-        {
-            public override XmlSerializer GetSerializer()
-            {
-                return Ship_Game.ResourceManager.weapon_serializer;
-            }
-
-            public override Dictionary<string, Ship_Game.ShipData> GetStorage()
-            {
-                return Ship_Game.ResourceManager.HullsDict;
-            }
-
-            public override string GetGroupFolder()
-            {
-                return "Races";
-            }
-        }*/
-
-        public class HullsGroup : ControllerSpec<Ship_Game.ShipData>
-        {
-            public HullsGroup(ModContents mod)
-                : base(mod)
-            {
-                groupName = "Hulls";
-                //serializer = Ship_Game.ResourceManager.weapon_serializer;
-            }
-
-            public override Dictionary<string, Ship_Game.ShipData> GetStorage()
-            {
-                return Ship_Game.ResourceManager.HullsDict;
-            }
-        }
-
-        public class TechSpec : ControllerSpec<Ship_Game.Technology>
-        {
-            public TechSpec(ModContents mod)
-                : base(mod)
-            {
-                groupName = "Technology";
-                this.AddLocString("DescriptionIndex");
-                this.AddLocString("NameIndex");
-            }
-
-            override public Dictionary<string, Ship_Game.Technology> GetStorage()
-            {
-                return Ship_Game.ResourceManager.TechTree;
-            }
-        }
-
-        public class TroopSpec : ControllerSpec<Ship_Game.Troop>
-        {
-            public TroopSpec(ModContents mod)
-                : base(mod)
-            {
-                groupName = "Troops";
-            }
-
-            override public Dictionary<string, Ship_Game.Troop> GetStorage()
-            {
-                return Ship_Game.ResourceManager.TroopsDict;
-            }
-        }
-
-        public class BuildingSpec : ControllerSpec<Ship_Game.Building>
-        {
-            public BuildingSpec(ModContents mod)
-                : base(mod)
-            {
-                groupName = "Buildings";
-                XmlAttributeOverrides overrides = new XmlAttributeOverrides();
-                //overrides.Add(targetType, "weapon", new XmlAttributes() { XmlIgnore = true });
-                serializer = new XmlSerializer(typeof(Ship_Game.Building), overrides);
-                this.AddLocString("NameTranslationIndex");
-                this.AddLocString("DescriptionIndex");
-                this.AddLocString("ShortDescriptionIndex");
-            }
-            override public Dictionary<string, Ship_Game.Building> GetStorage()
-            {
-                return Ship_Game.ResourceManager.BuildingsDict;
-            }
-        }
-
-        public class ArtifactsSpec : ControllerSpec<Ship_Game.Artifact>
-        {
-            public ArtifactsSpec(ModContents mod)
-                : base(mod)
-            {
-                groupName = "Artifacts";
-                this.AddLocString("DescriptionIndex");
-                this.AddLocString("NameIndex");
-            }
-            override public Dictionary<string, Ship_Game.Artifact> GetStorage()
-            {
-                return Ship_Game.ResourceManager.ArtifactsDict;
-            }
-        }
-
-        public class ModuleSpec : ControllerSpec<Ship_Game.Gameplay.ShipModule>
-        {
-            public ModuleSpec(ModContents mod)
-                : base(mod)
-            {
-                groupName = "ShipModules";
-                this.AddLocString("DescriptionIndex");
-                this.AddLocString("NameIndex");
-            }
-            /*
-            public override XmlSerializer GetSerializer()
-            {
-                return Ship_Game.ResourceManager.ModSerializer;
-            } */
-
-            override public Dictionary<string, Ship_Game.Gameplay.ShipModule> GetStorage()
-            {
-                return Ship_Game.ResourceManager.ShipModulesDict;
-            }
-        }
+        public void Redo() { } 
+        #endregion   
     }
 }

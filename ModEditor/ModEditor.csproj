@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -24,7 +25,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -66,9 +66,21 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Controllers\ControllerSpec.cs" />
     <Compile Include="Controllers\ModInfoController.cs" />
     <Compile Include="Controllers\StringsController.cs" />
-    <Compile Include="Controls\EditorManager.cs" />
+    <Compile Include="Controls\PropertyGridExplorer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PropertyGridExplorer.Designer.cs">
+      <DependentUpon>PropertyGridExplorer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ReferenceEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ReferenceEditor.Designer.cs">
+      <DependentUpon>ReferenceEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\StringEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -77,6 +89,12 @@
     </Compile>
     <Compile Include="Controls\TabHostEx.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="FormEditString.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormEditString.Designer.cs">
+      <DependentUpon>FormEditString.cs</DependentUpon>
     </Compile>
     <Compile Include="FormSelect.cs">
       <SubType>Form</SubType>
@@ -95,11 +113,11 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="XNATool\GraphicsDeviceService.cs" />
-    <Compile Include="Controls\ItemExplorer.cs">
+    <Compile Include="Controls\ItemView.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ItemExplorer.Designer.cs">
-      <DependentUpon>ItemExplorer.cs</DependentUpon>
+    <Compile Include="Controls\ItemView.Designer.cs">
+      <DependentUpon>ItemView.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -113,8 +131,14 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XNATool\XNAWrap.cs" />
+    <EmbeddedResource Include="Controls\ReferenceEditor.resx">
+      <DependentUpon>ReferenceEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\StringEditor.resx">
       <DependentUpon>StringEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormEditString.resx">
+      <DependentUpon>FormEditString.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormSelect.resx">
       <DependentUpon>FormSelect.cs</DependentUpon>
@@ -122,8 +146,8 @@
     <EmbeddedResource Include="FormAbout.resx">
       <DependentUpon>FormAbout.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\ItemExplorer.resx">
-      <DependentUpon>ItemExplorer.cs</DependentUpon>
+    <EmbeddedResource Include="Controls\ItemView.resx">
+      <DependentUpon>ItemView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
