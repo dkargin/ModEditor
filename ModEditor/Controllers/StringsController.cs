@@ -260,7 +260,7 @@ namespace ModEditor.Controllers
 
         private Ship_Game.LocalizationFile LoadLanguage(string language)
         {
-            FileInfo[] textList = ModContents.GetFilesFromDirectory(language);
+            FileInfo[] textList = Tools.GetFilesFromDirectory(language);
             XmlSerializer serializer = new XmlSerializer(typeof(Ship_Game.LocalizationFile));
             FileInfo[] array = textList;
             Ship_Game.LocalizationFile result = null;
@@ -317,7 +317,7 @@ namespace ModEditor.Controllers
         public override void ObtainModData(string basePath, bool isBase)
         {
             this.isBase = isBase;
-            foreach (var dir in ModContents.GetDirectoriesFromDirectory(Ship_Game.ResourceManager.WhichModPath + "/Localization/"))
+            foreach (var dir in Tools.GetDirectoriesFromDirectory(Ship_Game.ResourceManager.WhichModPath + "/Localization/"))
             {
                 var data = LoadLanguage(dir.FullName);
                 if (data != null)
@@ -371,7 +371,7 @@ namespace ModEditor.Controllers
             rootItem.node = groupNode;
         }
 
-        public override void Save(string dir)
+        public override void SaveAll(string dir)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(Ship_Game.LocalizationFile));
             foreach (DataColumn column in this.localStrings.Columns)
@@ -380,7 +380,7 @@ namespace ModEditor.Controllers
                     continue;
                 string outputDir = dir + "/Localization/" + column.ColumnName;
                 Directory.CreateDirectory(outputDir);
-                ModContents.SafeWriter writer = new ModContents.SafeWriter(new FileInfo(outputDir + "/GameText.xml"));
+                Tools.SafeWriter writer = new Tools.SafeWriter(new FileInfo(outputDir + "/GameText.xml"));
                 serializer.Serialize(writer.Stream, GenerateLocFile(column));
                 writer.Finish();
             }

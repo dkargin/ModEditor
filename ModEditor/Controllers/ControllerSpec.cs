@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
+
 namespace ModEditor.Controllers
 {
     public abstract class ControllerSpec<Target> : ModEditor.Controller
@@ -18,6 +19,7 @@ namespace ModEditor.Controllers
         
         public XmlSerializer serializer;
 
+        // Settings for XML writer. Mostly cosmetic
         XmlWriterSettings settings = new XmlWriterSettings() { OmitXmlDeclaration = true, Indent = true, IndentChars = "\t" };
 
         public ControllerSpec(ModContents mod)
@@ -38,8 +40,71 @@ namespace ModEditor.Controllers
         {
             foreach (var record in localCache)
             {
-                record.Value.UpdateUI();
+                record.Value.RaiseDataChanged();
             }
+        }
+
+        // Reloads item from file
+        public override void ReloadItem(Item item)
+        {
+            var storage = GetStorage();
+            
+            FileInfo info = new FileInfo(item.Path);
+
+            try
+            {
+                using (FileStream stream = info.OpenRead())
+                {
+                    Target data = (Target)serializer.Deserialize(stream);
+                    if (data != null)
+                    {
+                        item.target = data;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            var newTime = info.LastWriteTime;
+            item.fileTime = newTime;
+            item.RaiseDataChanged();
+        }
+
+        public override bool RenameItem(Item item, string newName)
+        {
+            if(!localCache.ContainsKey(item.name) || !globalCache.ContainsKey(item.name))
+            {
+                return false;
+                //throw (new ArgumentException("Item does not exists in current group"));
+            }
+            else if (localCache.ContainsKey(newName) || globalCache.ContainsKey(newName))
+            {
+                return false;
+                //throw (new ArgumentException("Name already exists within group"));
+            }
+            else if (!item.name.Equals(newName))
+            {
+                string oldName = item.name;
+                item.name = newName;
+                // 1. Update local cache
+                localCache.Remove(oldName);
+                localCache.Add(newName, item);
+
+                if (item.Next == null)                
+                {
+                    // 2. Update global cache
+                    globalCache.Remove(oldName);
+                    globalCache.Add(newName, item);
+                    // 3. Update game cache
+                    var data = GetStorage();
+                    data.Remove(oldName);
+                    data.Add(newName, (Target)item.target);                   
+                }
+
+                item.RaiseDataChanged();
+                return true;
+            }
+            return false;
         }
 
         public override void ClearCache()
@@ -67,19 +132,50 @@ namespace ModEditor.Controllers
             {
                 if (rootItem.isBase)
                     return null;
-                result.Items.Add("New", null, OnNewItem);
+                result.Items.Add("New", null, OnMenuNewItem);
             }
             else
-            {
-                result.Items.Add("Edit", null, (object sender, EventArgs e) => { this.OpenItemFile(item); });
-                result.Items.Add("Copy", null, (object sender, EventArgs e) => { OnCopyItem(item); });
+            {                
+                result.Items.Add("External Editor", null, (object sender, EventArgs e) => { this.OpenItemFile(item); });
+                result.Items.Add("Refresh", null, (object sender, EventArgs e) => { item.Refresh(); });
+                result.Items.Add(new ToolStripSeparator());
+                result.Items.Add("Rename", null, (object sender, EventArgs e) => { this.OpenItemFile(item); });
+                result.Items.Add("New", null, (object sender, EventArgs e) => { OnMenuNewBased(item); });
                 if (!item.isBase)
-                    result.Items.Add("Delete", null, (object sender, EventArgs e) => { OnDeleteItem(item); });
+                    result.Items.Add("Delete", null, (object sender, EventArgs e) => { OnMenuDeleteItem(item); });
+                
+                if (item.Next != null || item.Prev != null)
+                {
+                    result.Items.Add(new ToolStripSeparator());
+                    if (item.Next != null)
+                        result.Items.Add("Next", null, (object sender, EventArgs e) => { OnMenuGotoItem(item, true); });
+                    if (item.Prev != null)
+                        result.Items.Add("Prev", null, (object sender, EventArgs e) => { OnMenuGotoItem(item, false); });
+                }
             }
             return result;
         }
 
-        private void OnDeleteItem(Item item)
+        private void OnMenuGotoItem(Item item, bool next)
+        {
+            if (item.node == null)
+                return;
+            TreeView treeView = item.node.TreeView;
+            Item gotoItem = next ? item.Next : item.Prev;
+            if (gotoItem != null && gotoItem.node != null)
+                MainForm.SelectItem(gotoItem);
+        }
+
+        private void OnMenuRenameItem(Item item)
+        {
+            if (item.node == null)
+                return;
+            TreeView treeView = item.node.TreeView;
+            treeView.SelectedNode = item.node;
+            item.node.BeginEdit();
+        }
+
+        private void OnMenuDeleteItem(Item item)
         {
             try
             {
@@ -99,41 +195,66 @@ namespace ModEditor.Controllers
             }
         }
 
-        private void OnCopyItem(Item item)
+        private void OnMenuNewItem(object sender, EventArgs e)
         {
-            if (item.isBase)
+            Target result = CreateObject();
+
+            if (result != null)
             {
-                // TODO: create item for mod
+                Item item = CreateItem(GetNewName(targetType.FullName), result);
+                item.SetSourcePath(item.name + this.fileExtension);
+
+                if (item != null && rootItem.node != null)
+                {
+                    TreeNode node = new TreeNode(item.name);
+                    item.node = node;
+                    node.Tag = item;
+                    rootItem.node.Nodes.Add(node);
+                }
             }
         }
-        // Create context menu for treeview item selection
-        /*
-        public override Control GenerateControl(Item item)
+
+        private void OnMenuNewBased(Item item)
         {
-            if (item.Equals(rootItem))
-                return null;
-            ItemExplorer explorer = new ItemExplorer();
-            Target targetObj = (Target)item.target;
-            explorer.Init(item, targetObj);
-            return explorer;
-        }*/
+            Object result = Tools.Clone(item.target, targetType);
+
+            if (result == null)
+                return;            
+            
+            ControllerSpec<Target> frontController = this.GetFrontController() as ControllerSpec<Target>;
+            Item newItem = frontController.CreateItem(item.name, result);
+            if (newItem != null && frontController.rootItem.node != null)
+            {
+                TreeNode node = new TreeNode(newItem.name);
+                newItem.node = node;
+                node.Tag = newItem;
+                frontController.rootItem.node.Nodes.Add(node);
+            }
+            newItem.RaiseDataChanged();
+            item.RaiseDataChanged();
+        }
+
+        // Create Target object
         protected virtual Target CreateObject()
         {
+            System.Reflection.ConstructorInfo constructor = targetType.GetConstructor(new Type[] { });
+            if (constructor != null)
+            {
+                return (Target)constructor.Invoke(new Object[] { });
+            }
             return default(Target);
         }
 
-        private void OnNewItem(object sender, EventArgs e)
-        {
-
-        }
-
+        // Access to game data storage
         public abstract Dictionary<string, Target> GetStorage();
 
+        // Access to serializer. Not viable for textures and models
         public virtual XmlSerializer GetSerializer()
         {
-            return new XmlSerializer(typeof(Target));
+            return new XmlSerializer(targetType);
         }
 
+        // Save single (XML) item. Not viable for texture or model
         public void SaveItem(Item item, string rootDir)
         {
             string path = rootDir + "/" + GetGroupFolder() + "/" + item.name + ".xml";
@@ -147,10 +268,10 @@ namespace ModEditor.Controllers
             writer.Close();
         }
 
-        public override void Save(string rootDir)
+        // Save all (XML) items. Not viable for texture or model
+        public override void SaveAll(string rootDir)
         {
             XmlSerializer serializer = GetSerializer();
-
 
             if (serializer == null)
                 return;
@@ -163,10 +284,10 @@ namespace ModEditor.Controllers
                 SaveItem(item.Value, rootDir);
             }
         }
+
         /// <summary>
-        /// Iterate through cache and show data
+        /// Iterate through local cache and create mod overview node for each item
         /// </summary>
-        /// <param name="root"></param>
         public override void PopulateModOverview(TreeNodeCollection root)
         {
             TreeNode groupNode = null;
@@ -192,12 +313,41 @@ namespace ModEditor.Controllers
                     groupNode.Nodes.Add(node);
                 }
             }
-        }
-        /*
-        public virtual string GetSourceExtension()
+        }                
+
+        // Create item and store it in both local and global cache
+        public Item CreateItem(string name, object data)
         {
-            return ".xml";
-        }*/
+            string itemPath = this.GetGroupFolder() + "/" + name + fileExtension;
+            Item item = null;
+            if (globalCache.ContainsKey(name))
+            {
+                Item oldItem = globalCache[name];
+                // found the same item
+                if (oldItem.target.Equals(data))
+                    return null;
+
+                item = new Item(data, this, itemPath);
+                item.name = name;
+
+                localCache.Add(name, item);
+                item.prev = oldItem;
+                oldItem.next = item;
+
+                globalCache[name] = item;
+            }
+            else
+            {
+                /// add item to both global and local cache
+                item = new Item(data, this, itemPath);
+                item.name = name;
+                item.isBase = isBase;
+                globalCache.Add(name, item);
+                localCache.Add(name, item);
+            }
+            return item;
+        }
+
         /// <summary>
         /// Iterate through all items in dictionary and add them to overview
         /// </summary> 
@@ -208,35 +358,7 @@ namespace ModEditor.Controllers
             var data = GetStorage();
 
             foreach (var entry in data)
-            {
-                Item item = null;
-                string itemPath = this.GetGroupFolder() + "/" + entry.Key + fileExtension;
-                if (globalCache.ContainsKey(entry.Key))
-                {
-                    Item oldItem = globalCache[entry.Key];
-                    // found the same item
-                    if (oldItem.target.Equals(entry.Value))
-                        continue;
-
-                    item = CreateSpec(entry.Value, itemPath);
-                    item.name = entry.Key;
-
-                    localCache.Add(entry.Key, item);
-                    item.prev = oldItem;
-                    oldItem.next = item;
-
-                    globalCache[entry.Key] = item;
-                }
-                else
-                {
-                    /// add item to both global and local cache
-                    item = CreateSpec(entry.Value, itemPath);
-                    item.name = entry.Key;
-                    item.isBase = isBase;
-                    globalCache.Add(entry.Key, item);
-                    localCache.Add(entry.Key, item);
-                }
-            }
+                CreateItem(entry.Key, entry.Value);
         }
     }
 
@@ -249,8 +371,9 @@ namespace ModEditor.Controllers
 
             //fieldStringToken.Add(
             serializer = Ship_Game.ResourceManager.weapon_serializer;
+            /*
             OverrideFieldObjectReference("BeamTexture", "Textures");
-            OverrideFieldObjectReference("ProjectileTexturePath", "Textures");           
+            OverrideFieldObjectReference("ProjectileTexturePath", "Textures");           */
         }
 
         public override Dictionary<string, Ship_Game.Gameplay.Weapon> GetStorage()
@@ -284,7 +407,12 @@ namespace ModEditor.Controllers
             return null;
         }
 
-        public override void Save(string rootDir)
+        public override void ReloadItem(Item item)
+        {
+
+        }
+
+        public override void SaveAll(string rootDir)
         {
             var data = GetStorage();
 
@@ -369,8 +497,9 @@ namespace ModEditor.Controllers
             : base(mod)
         {
             groupName = "Technology";
+            /*
             this.OverrideFieldLocString("DescriptionIndex");
-            this.OverrideFieldLocString("NameIndex");
+            this.OverrideFieldLocString("NameIndex");*/
             //OverrideFieldObjectReference("IconPath", "Textures");
         }
 
@@ -386,8 +515,9 @@ namespace ModEditor.Controllers
             : base(mod)
         {
             groupName = "Troops";
+            /*
             //OverrideFieldObjectReference("Icon", "Textures");
-            OverrideFieldObjectReference("TexturePath", "Textures");
+            OverrideFieldObjectReference("TexturePath", "Textures");*/
         }
 
         override public Dictionary<string, Ship_Game.Troop> GetStorage()
@@ -405,12 +535,12 @@ namespace ModEditor.Controllers
             XmlAttributeOverrides overrides = new XmlAttributeOverrides();
             //overrides.Add(targetType, "weapon", new XmlAttributes() { XmlIgnore = true });
             serializer = new XmlSerializer(typeof(Ship_Game.Building), overrides);
-
+            /*
             OverrideFieldLocString("NameTranslationIndex");
             OverrideFieldLocString("DescriptionIndex");
             OverrideFieldLocString("ShortDescriptionIndex");
             OverrideFieldObjectReference("Weapon", "Weapons");
-            //OverrideFieldObjectReference("Icon", "Textures");           
+            //OverrideFieldObjectReference("Icon", "Textures");   */        
         }
         override public Dictionary<string, Ship_Game.Building> GetStorage()
         {
@@ -424,8 +554,9 @@ namespace ModEditor.Controllers
             : base(mod)
         {
             groupName = "Artifacts";
+            /*
             this.OverrideFieldLocString("DescriptionIndex");
-            this.OverrideFieldLocString("NameIndex");
+            this.OverrideFieldLocString("NameIndex");*/
            // OverrideFieldObjectReference("Icon", "Textures");
         }
         override public Dictionary<string, Ship_Game.Artifact> GetStorage()
@@ -440,15 +571,17 @@ namespace ModEditor.Controllers
             : base(mod)
         {
             groupName = "ShipModules";
-
+            /*
             this.OverrideFieldLocString("DescriptionIndex");
             this.OverrideFieldLocString("NameIndex");
             this.IgnoreField("ModuleCenter");
             this.IgnoreField("installedSlot");
             this.IgnoreField("hangarShip");
             this.IgnoreField("LinkedModulesList");
+            this.IgnoreField("Center");
+            this.IgnoreField("moduleCenter");
             this.OverrideFieldObjectReference("WeaponType", "Weapons");
-
+*/
             //OverrideFieldObjectReference("IconTexturePath", "Textures");            
         }
         /*
@@ -462,4 +595,6 @@ namespace ModEditor.Controllers
             return Ship_Game.ResourceManager.ShipModulesDict;
         }
     }
+
+    
 }

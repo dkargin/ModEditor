@@ -14,7 +14,7 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace ModEditor
-{
+{    
     /// <summary>
     /// Wraps item, i.e Tech, Device, or generic data. 
     /// Stores active ui information concerned to selected node
@@ -22,31 +22,77 @@ namespace ModEditor
     public class Item
     {
         public Controller controller;
-        public Object target;
+        public Object target;          // actual gamedata object
         public Item prev, next;
 
-        public bool isBase;
-        public string name;
-        protected string sourcePath;
+        public bool isBase = false;
+        public bool isNameEditable = true;
+
+        public string name = "";
+        protected string sourcePath = "";
 
         public TreeNode node;           // Assigned tree node
         public TabPage page;            // Assigned tab page
 
         public DateTime fileTime;       // Cached time to check if file was modified
 
-        public string Path
-        {
-            get
-            {
-                return sourcePath;
-            }
-        }
-
+        protected bool isDirty = false;
+        
+        public event EventHandler dataChanged;
+               
         public Item(Object item, Controller controller, string path)
         {
             target = item;
             this.controller = controller;
             this.sourcePath = path;
+            fileTime = File.GetLastWriteTime(Path);
+
+            dataChanged += Item_dataChanged;
+        }
+
+        public void RaiseDataChanged()
+        {
+            dataChanged(null, null);
+        }
+
+        void Item_dataChanged(object sender, EventArgs e)
+        {
+            if (HasVariants() && node != null)
+                node.BackColor = System.Drawing.Color.YellowGreen;
+            if (page != null)
+                page.Name = Name;
+        }
+
+        public string Path
+        {
+            get
+            {
+                return controller.Mod.RootPath + "/" + sourcePath;
+            }
+        }
+
+        public string Name
+        {
+            get
+            {
+                return name;
+            }
+        }
+
+        public Item Next
+        {
+            get
+            {
+                return next;
+            }
+        }
+
+        public Item Prev
+        {
+            get
+            {
+                return prev;
+            }
         }
 
         public bool IsBase()
@@ -60,30 +106,38 @@ namespace ModEditor
             return true;
         }
 
-        // Set source path. TODO: replace this function
-        public void SetPath(string path)
+        public bool Dirty
         {
-            sourcePath = path;
-            try
+            set
             {
-                fileTime = new FileInfo(path).LastWriteTime;
-            }
-            catch (Exception)
-            {
+                if (value)
+                {
+                    if (!IsBase())
+                        controller.Mod.MarkDirty();
+                }
+
+                isDirty = value;
             }
         }
 
+        // Set source path, relative to mod root folder
+        public void SetSourcePath(string path)
+        {
+            sourcePath = path;
+            fileTime = File.GetLastAccessTime(Path);           
+        }
+                
         public bool FileExists()
         {
-            FileInfo info = new FileInfo(sourcePath);
+            FileInfo info = new FileInfo(Path);
             return info.Exists;
         }
 
         public bool ModifiedOutside()
         {
-            FileInfo info = new FileInfo(sourcePath);
-            var newTime = info.LastWriteTime;
-            if (newTime.CompareTo(fileTime) > 0)
+            var newTime = File.GetLastWriteTime(Path);
+            int result = newTime.CompareTo(fileTime);
+            if (result > 0)
             {
                 return true;
             }
@@ -95,7 +149,7 @@ namespace ModEditor
             controller.ReloadItem(this);
         }
 
-        public bool Modded()
+        public bool IsOverrided()
         {
             return next != null;
         }
@@ -119,26 +173,22 @@ namespace ModEditor
         public void UnLink()
         {
             if (prev != null)
+            {
                 prev.next = next;
+                prev.RaiseDataChanged();
+            }
             if (next != null)
+            {
                 next.prev = prev;
+                next.RaiseDataChanged();
+            }
         }
 
         public bool HasVariants()
         {
-            return prev != null || next != null;
+            return Prev != null || Next != null;
         }
-
-        public void UpdateUI()
-        {
-            if (Modded() && node != null)
-                node.BackColor = System.Drawing.Color.YellowGreen;
-        }
-
-        public string GetPath()
-        {
-            return sourcePath;
-        }
+        
         public TabPage GetTabPage()
         {
             return page;
@@ -157,13 +207,25 @@ namespace ModEditor
 
         public bool isBase;
 
+        /*
         public Dictionary<string, List<ModEditorAttribute>> customAttributes = new Dictionary<string, List<ModEditorAttribute>>();
+         */
         // Local cache for items created by this controller/mod
         protected Dictionary<string, Item> localCache = new Dictionary<string, Item>();
 
         public List<string> fieldStringToken = new List<string>();
 
         protected ModContents mod;
+
+        
+
+        public Controller(ModContents mod)
+        {
+            this.mod = mod;
+            rootItem = new Item(null, this, "");
+            rootItem.controller = this;
+            rootItem.isNameEditable = false;
+        }
 
         public ModContents Mod
         {
@@ -173,11 +235,17 @@ namespace ModEditor
             }
         }
 
-        public Controller(ModContents mod)
+        public System.Type TargetType
         {
-            this.mod = mod;
-            rootItem = new Item(null, this, "");
-            rootItem.controller = this;
+            get
+            {
+                return targetType;
+            }
+        }
+
+        public Controller GetFrontController()
+        {
+            return ModContents.GetMod().GetController(this.groupName);
         }
 
         public bool IsBase()
@@ -185,6 +253,13 @@ namespace ModEditor
             return isBase;
         }
 
+        // try to set new item name
+        public virtual bool RenameItem(Item item, string newName)
+        {
+            return false;
+        }
+
+        /*
         // Add custom field attribute to modify ItemExplorer sheet generation
         public void AddCustomAttribute(string fieldName, ModEditorAttribute attrib)
         {
@@ -195,24 +270,18 @@ namespace ModEditor
         // Mark field as "string token"            
         public void OverrideFieldLocString(string fieldName)
         {
-            AddCustomAttribute(fieldName, new LocStringToken());
+            PropertyGridExplorer.AddOverridedAttribute(targetType, fieldName, new LocStringToken());
         }
         // Mark field as "object reference"            
         public void OverrideFieldObjectReference(string fieldName, string group)
         {
-            AddCustomAttribute(fieldName, new ObjectReference(group));
+            PropertyGridExplorer.AddOverridedAttribute(targetType, fieldName, new ObjectReference(group));
         }
         // Ignore field
         public void IgnoreField(string fieldName)
         {
-            AddCustomAttribute(fieldName, new IgnoreByEditor());
-        }
-
-
-        public virtual Item CreateSpec(Object obj, string path)
-        {
-            return new Item(obj, this, path);
-        }
+            PropertyGridExplorer.AddOverridedAttribute(targetType, fieldName, new IgnoreByEditor());
+        }*/
 
         public string GetGroupFolder()
         {
@@ -232,6 +301,7 @@ namespace ModEditor
             return localCache;
         }
 
+        /*
         // Obtain all the attributes within spedified field
         public List<ModEditorAttribute> GetFieldAttribute(System.Reflection.FieldInfo fieldInfo)
         {
@@ -251,7 +321,7 @@ namespace ModEditor
             }
 
             return result;
-        }
+        }*/
 
         // Generate control to edit item contents. Most times it is ItemExplorer property grid
         public virtual Control GenerateControl(Item item)
@@ -267,7 +337,7 @@ namespace ModEditor
 
         public abstract void ObtainModData(string basePath, bool isBase);
         public abstract void PopulateModOverview(TreeNodeCollection root);
-        public abstract void Save(string dir);
+        public abstract void SaveAll(string dir);
 
         public abstract void UpdateItems();
 
@@ -278,10 +348,7 @@ namespace ModEditor
 
         // Reloads item from file
         public virtual void ReloadItem(Item item)
-        {
-            FileInfo info = new FileInfo(item.Path);
-            var newTime = info.LastWriteTime;
-            item.fileTime = newTime;
+        {            
         }
 
         // Opens system editor
@@ -290,9 +357,8 @@ namespace ModEditor
             if (item.Path != "")
             {
                 try
-                {
-                    string path = mod.RootPath + "/" + item.Path;
-                    System.Diagnostics.Process.Start(path);
+                {                    
+                    System.Diagnostics.Process.Start(item.Path);
                     return true;
                 }
                 catch (Exception e)
@@ -302,9 +368,25 @@ namespace ModEditor
             }
             return false;
         }
-        // Check group for modifications
-        public virtual void CheckExternalModifications()
+
+        public virtual void CheckRootModifications(List<Item> modifiedItems)
         {
+        }
+
+        public void CheckCacheModifications(List<Item> modifiedItems)
+        {            
+            foreach (var record in GetLocalItems())
+            {
+                if (record.Value.ModifiedOutside())
+                    modifiedItems.Add(record.Value);
+            }
+        }
+
+        // Check group for modifications
+        public virtual void CheckExternalModifications(List<Item> modifiedItems)
+        {
+            CheckRootModifications(modifiedItems);
+            CheckCacheModifications(modifiedItems);
         }
     }
 
@@ -319,6 +401,8 @@ namespace ModEditor
         }
 
         ModContents next, prev;
+
+        protected static ModContents lastMod;
 
         public bool mergeReferences;        
 
@@ -337,7 +421,7 @@ namespace ModEditor
             Unloaded,
             Loaded 
         }
-        
+
         public State state = State.Empty;
 
         ModEditor.Controllers.ModInfoController modInfoController;
@@ -361,6 +445,8 @@ namespace ModEditor
             rootTreeNode = new TreeNode("Root Node");
             treeView.Nodes.Add(rootTreeNode);
 
+            lastMod = this;
+
             InitControllers();
             /*             
              	Races
@@ -381,10 +467,11 @@ namespace ModEditor
             result.PopulateData(result.modRootPath, false);
             return result;
         }
-        /*
-        static ModContents LoadMod(T)
+        
+        static public ModContents GetMod()
         {
-        }*/
+            return lastMod;
+        }
 
         void InitControllers()
         {
@@ -412,6 +499,11 @@ namespace ModEditor
         public static string GetLocString(int index)
         {
             return Controllers.StringsController.GetLocString(index);
+        }
+
+        public void MarkDirty()
+        {
+
         }
 
         public bool Loaded()
@@ -443,7 +535,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
-                MainForm.LogString(e.Message);
+                MainForm.LogErrorString(e.Message);
             }
             return false;
         }
@@ -461,7 +553,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
-                MainForm.LogString(e.Message);
+                MainForm.LogErrorString(e.Message);
             }
             return false;
         }
@@ -477,9 +569,14 @@ namespace ModEditor
         {
             return fieldInfo.GetValue(item.target);
         }
+
         // Check all items for external modificatios
-        public void CheckExternalModifications()
-        { 
+        public void CheckExternalModifications(List<Item> modifiedItems)
+        {
+            foreach (var record in controllers)
+            {                
+                record.Value.CheckExternalModifications(modifiedItems);
+            }
         }
 
         public void SaveMod(string ModEntryPath)
@@ -493,7 +590,7 @@ namespace ModEditor
             System.IO.Directory.CreateDirectory(outputDir);
             foreach (var controller in controllers)
             {
-                controller.Value.Save(outputDir);
+                controller.Value.SaveAll(outputDir);
             }            
         }
 
@@ -536,7 +633,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
-                MainForm.LogString(e.Message);
+                MainForm.LogErrorString(e.Message);
             }
             UpdateUI();
         }
@@ -574,156 +671,7 @@ namespace ModEditor
         }
 
         #region Tools
-        // Writes data to temporary file
-        public class SafeWriter
-        {
-            FileStream stream;
-
-            public FileStream Stream
-            {
-                get
-                {
-                    return stream;
-                }
-            }
-
-            //public FI.OpenRead();
-            FileInfo tmpFileInfo;
-            FileInfo fileInfo;
-
-            public SafeWriter(FileInfo info)
-            {
-                this.fileInfo = info;
-                tmpFileInfo = new FileInfo(info.FullName + ".tmp");
-                try
-                {
-                    tmpFileInfo.Delete();
-                }
-                catch (Exception)
-                {
-                }
-                stream = tmpFileInfo.OpenWrite();
-            }
-            // close stream and copy data from temporary file, deleting temporary file
-            public void Finish()
-            {
-                if (stream != null)
-                {
-                    stream.Close();
-                    stream.Dispose();
-                    tmpFileInfo.CopyTo(fileInfo.FullName, true);
-                    tmpFileInfo.Delete();
-                }
-            }
-        }
-
-        public static FileInfo[] GetFilesFromDirectory(string DirPath)
-        {
-            DirectoryInfo Dir = new DirectoryInfo(DirPath);
-            FileInfo[] result;
-            try
-            {
-                FileInfo[] FileList = Dir.GetFiles("*.*", SearchOption.AllDirectories);
-
-                result = FileList;
-            }
-            catch
-            {
-                result = new FileInfo[0];
-            }
-            return result;
-        }
-
-        public static DirectoryInfo[] GetDirectoriesFromDirectory(string DirPath)
-        {
-            DirectoryInfo Dir = new DirectoryInfo(DirPath);
-            DirectoryInfo[] result;
-            try
-            {
-                DirectoryInfo[] DirList = Dir.GetDirectories();//("*.*", SearchOption.AllDirectories);
-
-                result = DirList;
-            }
-            catch
-            {
-                result = new DirectoryInfo[0];
-            }
-            return result;
-        }
-
-        private const int TVIF_STATE = 0x8;
-        private const int TVIS_STATEIMAGEMASK = 0xF000;
-        private const int TV_FIRST = 0x1100;
-        private const int TVM_SETITEM = TV_FIRST + 63;
-
-        [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Auto)]
-        private struct TVITEM
-        {
-            public int mask;
-            public IntPtr hItem;
-            public int state;
-            public int stateMask;
-            [MarshalAs(UnmanagedType.LPTStr)]
-            public string lpszText;
-            public int cchTextMax;
-            public int iImage;
-            public int iSelectedImage;
-            public int cChildren;
-            public IntPtr lParam;
-        }
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam,
-                                                 ref TVITEM lParam);
-
-        /// <summary>
-        /// Hides the checkbox for the specified node on a TreeView control.
-        /// </summary>
-        public static void HideCheckBox(TreeNode node)
-        {
-            TreeView tvw = node.TreeView;
-            if (tvw == null)
-                return;
-            TVITEM tvi = new TVITEM();
-            tvi.hItem = node.Handle;
-            tvi.mask = TVIF_STATE;
-            tvi.stateMask = TVIS_STATEIMAGEMASK;
-            tvi.state = 0;
-            SendMessage(tvw.Handle, TVM_SETITEM, IntPtr.Zero, ref tvi);            
-        }
-       
-        static public string EmbedToString<Type>(string source, Type obj)
-        {
-            Regex rx = new Regex("\\$\\{(\\w+)\\.(\\w+)\\}"); 
-           
-            var TypeInfo = typeof(Type);
-
-            /// for each match calls lambda to evaluate replacement string
-            string result = rx.Replace(source, (Match match)=>
-            {
-                string className = match.Groups[1].Value;
-                string fieldName = match.Groups[2].Value;
-                if (className.Equals(TypeInfo.Name))
-                {
-                    try
-                    {
-                        /// Obtain string value from specified field
-                        return TypeInfo.GetField(fieldName).GetValue(obj).ToString();
-                    }
-                    catch (Exception)
-                    {
-                        /// Cannot access <fieldName>
-                    }
-                }
-                else
-                {
-                /// Do not do anything with data from other class
-                }
-                return match.ToString();
-            });           
-            
-            return result;        
-        }
+        
 
         public Controller GetGroupController(string group)
         {
@@ -731,30 +679,7 @@ namespace ModEditor
                 return this.controllers[group];
             return null;
         }
-        public interface EditAction
-        {
-            void Apply();
-            void Undo();
-            string Name();
-        }
-
-        public class ActionEditValue : EditAction
-        {
-            public Item item;
-            public void Apply()
-            { }
-            public void Undo()
-            { }
-            public string Name()
-            {
-                return "EditValue";
-            }
-        }
-
-        Queue<EditAction> actionsList;
-
-        public void Undo() { }
-        public void Redo() { } 
+        
         #endregion   
     }
 }

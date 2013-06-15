@@ -39,13 +39,13 @@
             this.refName.Location = new System.Drawing.Point(0, 0);
             this.refName.Name = "refName";
             this.refName.ReadOnly = true;
-            this.refName.Size = new System.Drawing.Size(145, 20);
+            this.refName.Size = new System.Drawing.Size(119, 20);
             this.refName.TabIndex = 0;
             // 
             // pick
             // 
             this.pick.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.pick.Location = new System.Drawing.Point(151, 0);
+            this.pick.Location = new System.Drawing.Point(125, 0);
             this.pick.Name = "pick";
             this.pick.Size = new System.Drawing.Size(25, 20);
             this.pick.TabIndex = 1;
@@ -58,9 +58,9 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.pick);
             this.Controls.Add(this.refName);
-            this.MinimumSize = new System.Drawing.Size(170, 21);
+            this.MinimumSize = new System.Drawing.Size(150, 21);
             this.Name = "ReferenceEditor";
-            this.Size = new System.Drawing.Size(176, 21);
+            this.Size = new System.Drawing.Size(150, 21);
             this.ResumeLayout(false);
             this.PerformLayout();
 

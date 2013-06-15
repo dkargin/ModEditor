@@ -18,18 +18,28 @@ using WinFormsContentLoading;
 namespace ModEditor
 {
     public partial class MainForm : Form, ModContents.Explorer
-    {   
+    {
+        public class Preferences
+        {
+            [Description("Interval for external checking. Set 0 to disable")]
+            public int externalCheck = 5000;
+        }
         public Ship_Game.Game1 game;
-        public XNAWrap baseGame;        
+        public XNAWrap baseGame;
+
+        static MainForm mainForm;
         
+        // TODO: more wide mod creation
         ModContents contentsBase;
         ModContents contentsMod;
          
-       // Boolean modReady = false;
         public MainForm()
-        {            
+        {
+            mainForm = this;
             InitializeComponent();
-            PropertyGridExplorer.Init();
+
+            PropertyGridExplorer.InitBasicTypes();
+            PropertyGridExplorer.InitGameTypes();
             /// Strings test
             //string source = "Laser weapons factory. Provides production bonus ${Building.SoftAttack} per assigned colonist. Also can defend colony using its production directly from the assembly line, shooting orbital targets at range ${Weapon.Range}. Needs ${Building.Maintenance} maintance per turn.";
             //Ship_Game.Building building = new Ship_Game.Building();
@@ -61,6 +71,7 @@ namespace ModEditor
                 baseGame.Content.RootDirectory = "Content";
                 Ship_Game.ResourceManager.localContentManager = baseGame.Content;
                 baseGame.graphics.ApplyChanges();
+                LogInfoString("XNA initialized");
             }
             catch(Exception e)
 			{
@@ -93,13 +104,13 @@ namespace ModEditor
             }
         }
 
-
         void SaveMod(string ModEntryPath)
         {
             if (contentsMod != null)
             {
                 Status = EditorStatus.Saving;
                 contentsMod.SaveMod(ModEntryPath);
+                LogInfoString("Saving complete");
                 Status = EditorStatus.Ready;
             }
         }
@@ -108,7 +119,6 @@ namespace ModEditor
         {
             return "";
         }
-
         
         void LoadBase()
         {
@@ -120,6 +130,7 @@ namespace ModEditor
                     // 1. Load contents
                     Ship_Game.ResourceManager.Initialize(baseGame.Content);
                     contentsBase.PopulateData(GetGamePath()+"Content", true);
+                    LogInfoString("Base data has been loaded");
                     contentsBase.state = ModContents.State.Loaded;
                     // 2. Analyze contents
                     //modReady = true;
@@ -146,9 +157,9 @@ namespace ModEditor
             {
                 contentsMod = new ModContents(ModContentsTree, contentsBase);
                 contentsMod.LoadMod(ModEntryPath);
-
+                LogInfoString("Mod data has been loaded");
                 contentsBase.UpdateUI();
-
+                LogInfoString("Done");
                 Status = EditorStatus.Ready;
             }
             catch (Exception e)
@@ -173,14 +184,85 @@ namespace ModEditor
             }
         }
 
+        public interface EditAction
+        {
+            void Apply();
+            void Rollback();
+            string Name();
+        }
+
+        public class ActionEditValue : EditAction
+        {
+            public Item item;
+
+            public object oldValue;
+
+            public void Apply()
+            {
+            }
+            public void Rollback()
+            {
+            }
+            public string Name()
+            {
+                return "EditValue";
+            }
+        }
+
+        static int maxActions = 10;
+        List<EditAction> actionsList = new List<EditAction>();
+        int executedActions = 0;
+
+        public void AddAction(EditAction action, bool apply = true)
+        {
+            actionsList.Insert(executedActions, action);
+            if (apply)
+            {
+                action.Apply();
+                executedActions++;
+            }
+            // remove 
+            if (executedActions < actionsList.Count)
+            {
+                actionsList.RemoveRange(executedActions, actionsList.Count);
+            }
+            // remove old position
+            if (actionsList.Count > maxActions)
+                actionsList.RemoveAt(0);
+        }
+
+        public void Undo()
+        {            
+            if (executedActions > 0)
+            {
+                executedActions--;
+                actionsList[executedActions].Rollback();
+            }
+        }
+        public void Redo()
+        {
+            // TODO: implement
+            if (actionsList.Count > 0 && executedActions < actionsList.Count)
+            {
+                actionsList[executedActions].Apply();
+            }
+        } 
+
         protected override void OnLoad(EventArgs e)
         {
-            base.OnLoad(e);           
+            base.OnLoad(e);
+            try
+            {
+                LoadGameBackend();
 
-            LoadGameBackend();
-
-            contentsBase = new ModContents(ModContentsTree, null);
-            contentsBase.SetName("Base");
+                contentsBase = new ModContents(ModContentsTree, null);
+                contentsBase.SetName("Base");
+                LogInfoString("Startup is complete");
+            }
+            catch (Exception ex)
+            {
+                LogErrorString(ex.Message);
+            }
             Status = EditorStatus.Empty;
         }
 
@@ -206,33 +288,72 @@ namespace ModEditor
             return null;
         }
 
-        static public void LogString(string message)
-        {
 
+        static int maxLogLines = 10;
+
+        List<string> logMessages = new List<string>();
+
+        static public void SelectItem(Item item)
+        {
+            if(mainForm != null)
+            {
+                mainForm.ExploreItem(item);
+            }
+        }
+
+        static public void LogNewString(string message)
+        {
+            if (mainForm != null)
+            {
+                mainForm.logMessages.Add(message);               
+                if(mainForm.logMessages.Count > maxLogLines)
+                    mainForm.logMessages.RemoveAt(0);
+                mainForm.logView.Lines = mainForm.logMessages.ToArray();
+            }
+        }
+
+        static public void LogInfoString(string message)
+        {           
+            LogNewString(String.Format("Info: {0}", message));
+        }
+
+        static public void LogErrorString(string message)
+        {
+            LogNewString(String.Format("Error: {0}", message));
         }
 
         public void ExploreItem(ModEditor.Item item)
         {
             if (item.page == null)
             {
-                Control control = item.GenerateControl();
-                if (control != null)
+                SuspendLayout();
+                try
                 {
-                    item.page = new TabPage(item.name);
-                    item.page.Tag = item;
-                    //ItemExplorer explorer = new ItemExplorer();
-                    //explorer.Dock = DockStyle.Fill;
-                    //item.PopulateExplorer(explorer);
-                    control.Dock = DockStyle.Fill;
-                    item.page.Controls.Add(control);
+                    Control control = item.GenerateControl();
+                    if (control != null)
+                    {
+                        item.page = new TabPage(item.name);
+                        item.page.Tag = item;
+                        control.Dock = DockStyle.Fill;
+                        item.page.Controls.Add(control);
 
-                    this.EditorTabs.TabPages.Add(item.page);
-                    this.EditorTabs.SelectedTab = item.page;
+                        this.EditorTabs.TabPages.Add(item.page);
+                        this.EditorTabs.SelectedTab = item.page;
+                    }
                 }
+                catch (Exception)
+                {
+                }
+                ResumeLayout();
             }
             else
             {
                 this.EditorTabs.SelectedTab = item.page;
+            }
+
+            if (item.node != null)
+            {
+                item.node.TreeView.SelectedNode = item.node;
             }
         }
 
@@ -295,15 +416,79 @@ namespace ModEditor
             CreateMod();
         }
 
+        private void CheckExternalModifications()
+        {
+            List<Item> modifiedItems = new List<Item>();
+            if (contentsMod == null)
+                return;
+            //contentsBase.CheckExternalModifications(modifiedItems);
+            contentsMod.CheckExternalModifications(modifiedItems);
+
+            if (modifiedItems.Count() > 0)
+            {
+                string list = "";
+                int maxItems = 20;
+                foreach (var item in modifiedItems)
+                {
+                    list = list + item.Path + "\n";
+                    if (maxItems-- == 0)
+                    {
+                        list = list + "\n ... more files";
+                        break;
+                    }
+                }
+                if (MessageBox.Show(list, "Found external changes", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.Yes)
+                {
+                    foreach (var item in modifiedItems)
+                    {
+                        item.Refresh();
+                    }
+                }
+            }
+        }
+
         private void CheckExternalModifications_Tick(object sender, EventArgs e)
         {
-            contentsBase.CheckExternalModifications();
-            contentsMod.CheckExternalModifications();
+            TimerCheckExternalModifications.Enabled = false;
+            CheckExternalModifications();
+            TimerCheckExternalModifications.Enabled = true;
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             (new FormAbout()).ShowDialog();
-        }        
+        }
+
+        private void runToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start("StarDrive.exe");
+        }
+
+        private void ModContentsTree_BeforeLabelEdit(object sender, NodeLabelEditEventArgs e)
+        {
+            Item item = e.Node.Tag as Item;
+            if (item == null || !item.isNameEditable)
+            {
+                e.CancelEdit = true;
+            }            
+        }
+
+        private void ModContentsTree_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)
+        {
+            Item item = e.Node.Tag as Item;
+            if (item == null || !item.isNameEditable)
+            {
+                e.CancelEdit = true;
+            }
+            else if (!item.controller.RenameItem(item, e.Label))
+            {
+                e.CancelEdit = true;
+            }
+        }
+
+        private void checkDataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CheckExternalModifications();
+        }
     }
 }

@@ -13,9 +13,10 @@ namespace ModEditor.Controllers
         {
             rootItem.name = "ModInfo";
             groupName = "ModInfo";
-
+            targetType = typeof(Ship_Game.ModInformation);
+            /*
             OverrideFieldObjectReference("ModImagePath_1920x1280", "Textures");
-            OverrideFieldObjectReference("PortraitPath", "Textures");
+            OverrideFieldObjectReference("PortraitPath", "Textures");*/
         }
 
         public override void ClearCache()
@@ -41,7 +42,7 @@ namespace ModEditor.Controllers
         public override void ObtainModData(string basePath, bool isBase)
         {
             this.isBase = isBase;
-            rootItem.SetPath(basePath);
+            rootItem = new Item(null, this, isBase?"":basePath+".xml");
         }
 
         public override void PopulateModOverview(TreeNodeCollection root)
@@ -62,7 +63,7 @@ namespace ModEditor.Controllers
 
         }
 
-        public override void Save(string dir)
+        public override void SaveAll(string dir)
         {
         }
 

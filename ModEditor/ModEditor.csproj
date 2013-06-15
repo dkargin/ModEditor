@@ -69,6 +69,7 @@
     <Compile Include="Controllers\ControllerSpec.cs" />
     <Compile Include="Controllers\ModInfoController.cs" />
     <Compile Include="Controllers\StringsController.cs" />
+    <Compile Include="Controls\FieldEditors.cs" />
     <Compile Include="Controls\PropertyGridExplorer.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -90,6 +91,13 @@
     <Compile Include="Controls\TabHostEx.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="FieldOverrides.cs" />
+    <Compile Include="FormEditContainer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormEditContainer.Designer.cs">
+      <DependentUpon>FormEditContainer.cs</DependentUpon>
+    </Compile>
     <Compile Include="FormEditString.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -109,6 +117,7 @@
       <DependentUpon>FormAbout.cs</DependentUpon>
     </Compile>
     <Compile Include="ModContents.cs" />
+    <Compile Include="Tools.cs" />
     <Compile Include="XNATool\GraphicsDeviceControl.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -131,11 +140,17 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XNATool\XNAWrap.cs" />
+    <EmbeddedResource Include="Controls\PropertyGridExplorer.resx">
+      <DependentUpon>PropertyGridExplorer.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\ReferenceEditor.resx">
       <DependentUpon>ReferenceEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\StringEditor.resx">
       <DependentUpon>StringEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormEditContainer.resx">
+      <DependentUpon>FormEditContainer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormEditString.resx">
       <DependentUpon>FormEditString.cs</DependentUpon>
