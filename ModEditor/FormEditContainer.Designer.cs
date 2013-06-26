@@ -33,15 +33,16 @@
             this.listView = new System.Windows.Forms.ListBox();
             this.btnAdd = new System.Windows.Forms.Button();
             this.btnRemove = new System.Windows.Forms.Button();
-            this.itemView = new ModEditor.Controls.PropertyGridExplorer();
             this.btnCopy = new System.Windows.Forms.Button();
+            this.CustomList = new System.Windows.Forms.FlowLayoutPanel();
+            this.itemView = new ModEditor.Controls.PropertyGridExplorer();
             this.SuspendLayout();
             // 
             // cancelButton
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(145, 362);
+            this.cancelButton.Location = new System.Drawing.Point(145, 496);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 19);
             this.cancelButton.TabIndex = 28;
@@ -51,7 +52,7 @@
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.okButton.Location = new System.Drawing.Point(16, 362);
+            this.okButton.Location = new System.Drawing.Point(16, 496);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(75, 19);
             this.okButton.TabIndex = 27;
@@ -65,14 +66,14 @@
             this.listView.FormattingEnabled = true;
             this.listView.Location = new System.Drawing.Point(2, 2);
             this.listView.Name = "listView";
-            this.listView.Size = new System.Drawing.Size(237, 312);
+            this.listView.Size = new System.Drawing.Size(237, 442);
             this.listView.TabIndex = 29;
             this.listView.SelectedIndexChanged += new System.EventHandler(this.listView_SelectedIndexChanged);
             // 
             // btnAdd
             // 
             this.btnAdd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAdd.Location = new System.Drawing.Point(2, 328);
+            this.btnAdd.Location = new System.Drawing.Point(2, 462);
             this.btnAdd.Name = "btnAdd";
             this.btnAdd.Size = new System.Drawing.Size(75, 23);
             this.btnAdd.TabIndex = 30;
@@ -83,13 +84,36 @@
             // btnRemove
             // 
             this.btnRemove.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnRemove.Location = new System.Drawing.Point(164, 328);
+            this.btnRemove.Location = new System.Drawing.Point(164, 462);
             this.btnRemove.Name = "btnRemove";
             this.btnRemove.Size = new System.Drawing.Size(75, 23);
             this.btnRemove.TabIndex = 31;
             this.btnRemove.Text = "Remove";
             this.btnRemove.UseVisualStyleBackColor = true;
             this.btnRemove.Click += new System.EventHandler(this.btnRemove_Click);
+            // 
+            // btnCopy
+            // 
+            this.btnCopy.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnCopy.Location = new System.Drawing.Point(83, 462);
+            this.btnCopy.Name = "btnCopy";
+            this.btnCopy.Size = new System.Drawing.Size(75, 23);
+            this.btnCopy.TabIndex = 33;
+            this.btnCopy.Text = "Copy";
+            this.btnCopy.UseVisualStyleBackColor = true;
+            this.btnCopy.Click += new System.EventHandler(this.btnCopy_Click);
+            // 
+            // CustomList
+            // 
+            this.CustomList.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.CustomList.AutoScroll = true;
+            this.CustomList.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            this.CustomList.Location = new System.Drawing.Point(246, 225);
+            this.CustomList.Name = "CustomList";
+            this.CustomList.Size = new System.Drawing.Size(375, 290);
+            this.CustomList.TabIndex = 34;
+            this.CustomList.WrapContents = false;
             // 
             // itemView
             // 
@@ -107,25 +131,15 @@
             this.itemView.RowCount = 2;
             this.itemView.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.itemView.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.itemView.Size = new System.Drawing.Size(376, 379);
+            this.itemView.Size = new System.Drawing.Size(376, 216);
             this.itemView.TabIndex = 32;
-            // 
-            // btnCopy
-            // 
-            this.btnCopy.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnCopy.Location = new System.Drawing.Point(83, 328);
-            this.btnCopy.Name = "btnCopy";
-            this.btnCopy.Size = new System.Drawing.Size(75, 23);
-            this.btnCopy.TabIndex = 33;
-            this.btnCopy.Text = "Copy";
-            this.btnCopy.UseVisualStyleBackColor = true;
-            this.btnCopy.Click += new System.EventHandler(this.btnCopy_Click);
             // 
             // FormEditContainer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(625, 388);
+            this.ClientSize = new System.Drawing.Size(625, 522);
+            this.Controls.Add(this.CustomList);
             this.Controls.Add(this.btnCopy);
             this.Controls.Add(this.itemView);
             this.Controls.Add(this.btnRemove);
@@ -149,5 +163,6 @@
         private System.Windows.Forms.Button btnRemove;
         private Controls.PropertyGridExplorer itemView;
         private System.Windows.Forms.Button btnCopy;
+        private System.Windows.Forms.FlowLayoutPanel CustomList;
     }
 }

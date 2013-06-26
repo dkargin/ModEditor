@@ -13,7 +13,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml.Serialization;
-using WinFormsContentLoading;
+using ModEditor;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace ModEditor
 {
@@ -24,22 +25,33 @@ namespace ModEditor
             [Description("Interval for external checking. Set 0 to disable")]
             public int externalCheck = 5000;
         }
-        public Ship_Game.Game1 game;
-        public XNAWrap baseGame;
+
+        //public Ship_Game.Game1 game;
+        //public XNAWrap baseGame;
+
+        Game baseGame;
 
         static MainForm mainForm;
         
         // TODO: more wide mod creation
         ModContents contentsBase;
         ModContents contentsMod;
+
+        private bool m_bSaveLayout = true;
+        private DeserializeDockContent m_deserializeDockContent;
+        ToolSolutionExplorer solutionExplorer = new ToolSolutionExplorer();
          
         public MainForm()
         {
             mainForm = this;
             InitializeComponent();
 
-            PropertyGridExplorer.InitBasicTypes();
-            PropertyGridExplorer.InitGameTypes();
+            FieldEditorManager.InitBasicTypes();
+            FieldEditorManager.InitGameTypes();
+
+            solutionExplorer.RightToLeftLayout = RightToLeftLayout;
+
+            solutionExplorer.Show(workArea);
             /// Strings test
             //string source = "Laser weapons factory. Provides production bonus ${Building.SoftAttack} per assigned colonist. Also can defend colony using its production directly from the assembly line, shooting orbital targets at range ${Weapon.Range}. Needs ${Building.Maintenance} maintance per turn.";
             //Ship_Game.Building building = new Ship_Game.Building();
@@ -61,17 +73,15 @@ namespace ModEditor
                 statusGeneral.Text = value.ToString();
             }
         }
-        
-        private void LoadGameBackend()
+
+        public void InitXNA(Game game, GraphicsDeviceManager graphics)
         {
             try
             {
-                baseGame = new XNAWrap();
-                Ship_Game.GlobalStats.Config = new Ship_Game.Config();               
-                baseGame.Content.RootDirectory = "Content";
-                Ship_Game.ResourceManager.localContentManager = baseGame.Content;
-                baseGame.graphics.ApplyChanges();
-                LogInfoString("XNA initialized");
+                baseGame = game;
+                // need this to load textures and models
+                graphics.ApplyChanges();
+                LogInfoString("XNA attached");
             }
             catch(Exception e)
 			{
@@ -253,7 +263,6 @@ namespace ModEditor
             base.OnLoad(e);
             try
             {
-                LoadGameBackend();
 
                 contentsBase = new ModContents(ModContentsTree, null);
                 contentsBase.SetName("Base");

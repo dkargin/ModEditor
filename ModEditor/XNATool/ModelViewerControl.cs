@@ -15,14 +15,14 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 #endregion
 
-namespace WinFormsContentLoading
+namespace ModEditor
 {
     /// <summary>
     /// Example control inherits from GraphicsDeviceControl, and displays
     /// a spinning 3D model. The main form class is responsible for loading
     /// the model: this control just displays it.
     /// </summary>
-    class ModelViewerControl : GraphicsDeviceControl
+    public class ModelViewerControl : GraphicsDeviceControl
     {
         /// <summary>
         /// Gets or sets the current model.
@@ -162,6 +162,13 @@ namespace WinFormsContentLoading
 
                 modelRadius = Math.Max(modelRadius,  meshRadius);
             }
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            this.ResumeLayout(false);
+
         }
     }
 }

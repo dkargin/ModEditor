@@ -1,12 +1,32 @@
-﻿using System;
+﻿using ModEditor.Controllers;
+using ModEditor.Controls;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Windows.Forms;
 namespace ModEditor
 {
-    public interface FieldCallback
+    // Used by any TypeEditor to access assigned object
+    public interface ObjectAccessor
     {
-        // get overrides for specific field
         System.Type GetTargetType();
+
+        // get field name ( or anything simular)
+        string GetName();
+
+        bool ReadOnly();
+        // obtain value
+        object ReadValue();
+        // set new value
+        void WriteValue(object value);
+
+        List<ModEditorAttribute> GetAttributes();
+    }
+    
+    public interface FieldAccessor
+    {
+        System.Type GetTargetType();
+        // get overrides for specific field
         //List<ModEditorAttribute> GetAttributes(System.Reflection.FieldInfo fieldInfo);
         // if value is locked
         bool ReadOnly();
@@ -16,11 +36,197 @@ namespace ModEditor
         void WriteValue(System.Reflection.FieldInfo fieldInfo, object value);
     }
 
+    public class ListObjectAccessor : ModEditor.ObjectAccessor
+    {
+        public int index;
+        public string name;
+
+        IList list;
+        Type targetType;
+        bool readOnly;
+        
+        List<ModEditorAttribute> attributes;
+
+        public ListObjectAccessor(IList list, int index, Type targetType, string name, bool readOnly, List<ModEditorAttribute> attrib)
+        {
+            this.list = list;
+            this.index = index;
+            this.targetType = targetType;
+            this.readOnly = readOnly;
+            this.name = name;
+            this.attributes = attrib;
+        }
+
+        public bool ReadOnly()
+        {
+            return readOnly;
+        }
+
+        public System.Type GetTargetType()
+        {
+            return targetType;
+        }
+
+        // get field name ( or anything simular)
+        public string GetName()
+        {
+            return name;
+        }
+
+        // obtain value
+        public object ReadValue()
+        {
+            return list[index];
+        }
+
+        // set new value
+        public void WriteValue(object value)
+        {
+            list[index] = value;
+        }
+
+        public List<ModEditorAttribute> GetAttributes()
+        {
+            return attributes;
+        }
+    }
+
+    public class GenericObjectAccessor : ModEditor.ObjectAccessor
+    {
+        Object data;
+        Type targetType;
+        bool readOnly;
+        string name;
+        List<ModEditorAttribute> attributes;
+
+        public GenericObjectAccessor(Object data, Type targetType, string name, bool readOnly, List<ModEditorAttribute> attrib)
+        {
+            this.data = data;
+            this.targetType = targetType;
+            this.readOnly = readOnly;
+            this.name = name;
+            this.attributes = attrib;
+        }
+
+        public bool ReadOnly()
+        {
+            return readOnly;
+        }
+
+        public System.Type GetTargetType()
+        {
+            return targetType;
+        }
+
+        // get field name ( or anything simular)
+        public string GetName()
+        {
+            return name;
+        }
+
+        // obtain value
+        public object ReadValue()
+        {
+            return data;
+        }
+
+        // set new value
+        public void WriteValue(object value)
+        {
+            data = value;
+        }
+
+        public List<ModEditorAttribute> GetAttributes()
+        {
+            return attributes;
+        }
+    }
+    // Accessor for specific field from other object
+    public class ObjectFieldAccessor : ModEditor.ObjectAccessor
+    {
+        public ModEditor.FieldAccessor parent;
+        public System.Reflection.FieldInfo field;
+
+        public ObjectFieldAccessor(ModEditor.FieldAccessor parent, System.Reflection.FieldInfo field)
+        {
+            this.parent = parent;
+            this.field = field;
+        }
+
+        public bool ReadOnly()
+        {
+            return parent.ReadOnly();
+        }
+
+        public System.Type GetTargetType()
+        {
+            return field.FieldType;
+        }
+
+        // get field name ( or anything simular)
+        public string GetName()
+        {
+            return field.Name;
+        }
+
+        // obtain value
+        public object ReadValue()
+        {
+            return parent.ReadValue(field);
+        }
+
+        // set new value
+        public void WriteValue(object value)
+        {
+            parent.WriteValue(field, value);
+        }
+
+        public List<ModEditorAttribute> GetAttributes()
+        {
+            return FieldEditorManager.GetAttributes(field, parent.GetTargetType());
+        }
+    }
+
+    // Plain accessor without overloading Read/Write methods
+    public class GenericFieldAccessor : ModEditor.FieldAccessor
+    {
+        object item;
+        bool readOnly;
+        System.Type targetType;
+
+        public GenericFieldAccessor(object item, System.Type type, bool readOnly)
+        {
+            this.item = item;
+            this.readOnly = readOnly;
+            this.targetType = type;
+        }
+
+        public bool ReadOnly()
+        {
+            return readOnly;
+        }
+
+        public System.Type GetTargetType()
+        {
+            return targetType;
+        }
+
+        public object ReadValue(System.Reflection.FieldInfo field)
+        {
+            return field.GetValue(item);
+        }
+
+        public void WriteValue(System.Reflection.FieldInfo field, object value)
+        {
+            field.SetValue(item, value);
+        }
+    }
+
     #region Attributes
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class ModEditorAttribute : Attribute
     {
-        public virtual FieldEditor GenerateEditor(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
+        public virtual TypeEditor GenerateEditor(ObjectAccessor item)
         {
             return null;
         }
@@ -28,7 +234,7 @@ namespace ModEditor
 
     public class IgnoreByEditor : ModEditorAttribute
     {
-        public override FieldEditor GenerateEditor(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
+        public override TypeEditor GenerateEditor(ObjectAccessor item)
         {
             return null;
         }
@@ -36,9 +242,9 @@ namespace ModEditor
 
     public class LocStringToken : ModEditorAttribute
     {
-        public override FieldEditor GenerateEditor(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
+        public override TypeEditor GenerateEditor(ObjectAccessor item)
         {
-            return new FieldEditorLocString(fieldInfo, item);
+            return new FieldEditorLocString(item);
         }
     }
     
@@ -51,21 +257,19 @@ namespace ModEditor
             this.groupName = group;
             this.allowEmpty = allowEmpty;
         }
-        public override FieldEditor GenerateEditor(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
+        public override TypeEditor GenerateEditor(ObjectAccessor item)
         {
-            return new FieldEditorReference(fieldInfo, item, groupName, allowEmpty);
+            return new FieldEditorReference(item, groupName, allowEmpty);
         }
     }
     #endregion
 
-    public class FieldEditor
-    {
-        System.Reflection.FieldInfo fieldInfo;
-        public FieldCallback callback;
+    public class TypeEditor
+    {        
+        public ObjectAccessor callback;
 
-        public FieldEditor(System.Reflection.FieldInfo field, FieldCallback callback)
+        public TypeEditor(ObjectAccessor callback)
         {
-            fieldInfo = field;
             this.callback = callback;
         }
 
@@ -81,29 +285,30 @@ namespace ModEditor
         {
         }
 
-        public System.Reflection.FieldInfo FieldInfo
+        public Type TargetType
         {
             get
             {
-                return fieldInfo;
+                return callback.GetTargetType();
             }
         }
+
         protected object ReadValue()
         {
-            return callback.ReadValue(fieldInfo);
+            return callback.ReadValue();
         }
 
         protected void WriteValue(object value)
         {
-            callback.WriteValue(fieldInfo, value);
+            callback.WriteValue(value);
         }
     }
 
-    public class FieldEditorFloat : FieldEditor
+    public class FieldEditorFloat : TypeEditor
     {
         TextBox control;
-        public FieldEditorFloat(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
-            : base(fieldInfo, item)
+        public FieldEditorFloat(ObjectAccessor item)
+            : base(item)
         {
             control = new TextBox();
             control.BorderStyle = BorderStyle.None;
@@ -142,16 +347,16 @@ namespace ModEditor
         }
     }
 
-    public class FieldEditorEnum : FieldEditor
+    public class FieldEditorEnum : TypeEditor
     {
         ComboBox control;
 
-        public FieldEditorEnum(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
-            : base(fieldInfo, item)
+        public FieldEditorEnum(ObjectAccessor item)
+            : base(item)
         {
             control = new ComboBox();
             //control.Bo = BorderStyle.None;
-            control.Items.AddRange(Enum.GetNames(fieldInfo.FieldType));
+            control.Items.AddRange(Enum.GetNames(TargetType));
             //control.DataSource = Enum.GetValues(fieldInfo.FieldType);
             control.DropDownStyle = ComboBoxStyle.DropDownList;
             control.SelectedIndexChanged += control_SelectedIndexChanged;
@@ -160,7 +365,7 @@ namespace ModEditor
         void control_SelectedIndexChanged(object sender, EventArgs e)
         {
             //throw new NotImplementedException();
-            object value = Enum.Parse(FieldInfo.FieldType, control.SelectedItem.ToString());
+            object value = Enum.Parse(TargetType, control.SelectedItem.ToString());
             if (callback.ReadOnly())
                 UpdateValue();
             else
@@ -181,11 +386,11 @@ namespace ModEditor
     /// <summary>
     /// Only show field .ToString contents
     /// </summary>
-    public class FieldEditorReadOnly : FieldEditor
+    public class FieldEditorReadOnly : TypeEditor
     {
         TextBox control;
-        public FieldEditorReadOnly(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
-            : base(fieldInfo, item)
+        public FieldEditorReadOnly(ObjectAccessor item)
+            : base(item)
         {
             control = new TextBox();
             //control.Height = preferedHeight;
@@ -208,11 +413,11 @@ namespace ModEditor
     /// <summary>
     /// Edit int field
     /// </summary>
-    public class FieldEditorInt<TargetInt> : FieldEditor
+    public class FieldEditorInt<TargetInt> : TypeEditor
     {
         NumericUpDown control;
-        public FieldEditorInt(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
-            : base(fieldInfo, item)
+        public FieldEditorInt(ObjectAccessor item)
+            : base(item)
         {
             control = new NumericUpDown();
             control.BorderStyle = BorderStyle.None;
@@ -272,11 +477,11 @@ namespace ModEditor
         }
     }
 
-    public class FieldEditorBool : FieldEditor
+    public class FieldEditorBool : TypeEditor
     {
         CheckBox control;
-        public FieldEditorBool(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
-            : base(fieldInfo, item)
+        public FieldEditorBool(ObjectAccessor item)
+            : base(item)
         {
             control = new CheckBox();
             //control.Height = preferedHeight;
@@ -305,11 +510,11 @@ namespace ModEditor
     /// <summary>
     /// Edit string field
     /// </summary>
-    public class FieldEditorString : FieldEditor
+    public class FieldEditorString : TypeEditor
     {
         TextBox control;
-        public FieldEditorString(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
-            : base(fieldInfo, item)
+        public FieldEditorString(ObjectAccessor item)
+            : base(item)
         {
             control = new TextBox();
             control.BorderStyle = BorderStyle.None;
@@ -343,12 +548,12 @@ namespace ModEditor
         }
     }
 
-    public class FieldEditorList : FieldEditor
+    public class FieldEditorList : TypeEditor
     {
         Type targetType;
         Button control;
-        public FieldEditorList(System.Reflection.FieldInfo fieldInfo, FieldCallback item, Type type)
-            : base(fieldInfo, item)
+        public FieldEditorList(ObjectAccessor item, Type type)
+            : base(item)
         {
             this.targetType = type;
             control = new Button();
@@ -362,8 +567,10 @@ namespace ModEditor
             if (source == null)
                 return;
 
-            FormEditContainer form = new FormEditContainer(targetType, source);
-            form.Text = String.Format("Edit {0}", this.FieldInfo.Name);
+            //FormEditContainer form = new FormEditContainer(targetType, source, callback.GetAttributes());
+            FormSimpleEditContainer form = new FormSimpleEditContainer(targetType, source, callback.GetAttributes());
+
+            form.Text = String.Format("Edit {0}", callback.GetName());
 
             if (form.ShowDialog() == DialogResult.OK)
             {
@@ -386,13 +593,13 @@ namespace ModEditor
     }
 
     // Field is represented by a string, containing name of referenced object.
-    public class FieldEditorReference : FieldEditor
+    public class FieldEditorReference : TypeEditor
     {
         ModEditor.Controls.ReferenceEditor control;
         string groupName;
         bool allowEmpty;
-        public FieldEditorReference(System.Reflection.FieldInfo fieldInfo, FieldCallback item, string groupName, bool allowEmpty)
-            : base(fieldInfo, item)
+        public FieldEditorReference(ObjectAccessor item, string groupName, bool allowEmpty)
+            : base(item)
         {
             control = new ModEditor.Controls.ReferenceEditor();
             //control.MaximumSize = new Size(0, rowHeight);
@@ -475,11 +682,11 @@ namespace ModEditor
     }
 
     // Represented by int token, index of string in localization dictionary
-    public class FieldEditorLocString : FieldEditor
+    public class FieldEditorLocString : TypeEditor
     {
         ModEditor.Controls.StringEditor control;
-        public FieldEditorLocString(System.Reflection.FieldInfo fieldInfo, FieldCallback item)
-            : base(fieldInfo, item)
+        public FieldEditorLocString(ObjectAccessor item)
+            : base(item)
         {
             control = new ModEditor.Controls.StringEditor();
 
@@ -563,6 +770,233 @@ namespace ModEditor
             int index = GetToken();
             control.TokenBox.Text = index.ToString();
             control.ValueBox.Text = ModContents.GetLocString(index);
+        }
+    }
+
+    public class FieldEditorManager
+    {
+        static Dictionary<System.Type, FieldOverrides> typeTable = new Dictionary<Type, FieldOverrides>();
+
+        static public FieldOverrides GetFieldOverrides(Type type)
+        {
+            FieldOverrides overrides = null;
+            if (typeTable.ContainsKey(type))
+                overrides = typeTable[type];
+            else
+            {
+                overrides = new FieldOverrides(type);
+                typeTable.Add(type, overrides);
+            }
+            return overrides;
+        }
+
+        static public bool HasAttributeOverrides(Type type)
+        {
+            if (typeTable.ContainsKey(type))
+                return typeTable[type].HasOverrides();
+            return false;
+        }
+
+        static public void AddOverridedAttribute(Type type, string fieldName, Attribute attrib)
+        {
+            GetFieldOverrides(type).AddAttribute(fieldName, attrib);
+        }
+
+        static public List<ModEditorAttribute> GetAttributes(System.Reflection.FieldInfo fieldInfo, Type ownerType)
+        {
+            List<ModEditorAttribute> result = new List<ModEditorAttribute>();
+
+            if (FieldEditorManager.HasAttributeOverrides(ownerType))
+            {
+                var overrides = FieldEditorManager.GetFieldOverrides(ownerType);
+                var list = overrides.GetFieldAttribute(fieldInfo);
+                // Get attributes from local override list
+                foreach (ModEditorAttribute attribute in overrides.GetFieldAttribute(fieldInfo))
+                    result.Add(attribute);
+            }
+
+            // Get attributes from class definition                
+            foreach (ModEditorAttribute attribute in fieldInfo.GetCustomAttributes(true))
+                result.Add(attribute);
+
+            return result;
+        }
+
+        static public bool IsPrimitiveType(System.Type type)
+        {
+            if (type.IsEnum)
+            {
+                return true;
+            }
+
+            if (type.IsGenericType)
+                return false;
+
+            if (editorFactories.ContainsKey(type))
+                return true;
+            return false;
+        }
+
+        static public TypeEditor GenerateEditor(ObjectAccessor callback)
+        {
+            // No overriden editor was found - use default editors
+
+            Type type = callback.GetTargetType();
+            if (type.IsEnum)
+            {
+                return new FieldEditorEnum(callback);
+            }
+
+            if (type.IsGenericType)
+            {
+                // If list
+                /*
+                if (type.GetInterfaces().Contains(typeof(IList)))
+                {
+                }*/
+                if (type.Name.Equals("List`1"))
+                {
+                    Type storedType = type.GetGenericArguments()[0];
+                    // check custom attributes for list
+                    return new FieldEditorList(callback, storedType);
+                }
+            }
+
+            foreach (ModEditorAttribute attrib in callback.GetAttributes()/*GetAttributes(fieldInfo, callback.GetTargetType())*/)
+            {
+                // Attribute can return null - thats ok, meaning that this field should be skipped
+                var editor = attrib.GenerateEditor(callback);
+                return editor;
+            }
+
+            Func<ObjectAccessor, TypeEditor> factory = null;
+            if (editorFactories.ContainsKey(type))
+                factory = editorFactories[type].factory;
+            else
+                return new FieldEditorReadOnly(callback);
+
+            return factory(callback);
+        }
+
+        class TypeEditorDesc
+        {
+            public object defaultValue;                         // used to create new items of primitive types
+            public Func<ObjectAccessor, TypeEditor> factory;    // factory for TypeEditor
+        }
+        static Dictionary<System.Type, TypeEditorDesc> editorFactories = new Dictionary<System.Type, TypeEditorDesc>();
+
+        static public void AddTypeEditorFactory(Type type, Func<ObjectAccessor, TypeEditor> factory, object defaultValue)
+        {
+            editorFactories.Add(type, new TypeEditorDesc() {factory = factory, defaultValue = defaultValue} );
+        }
+        /// <summary>
+        /// Register editors for basic types
+        /// </summary>
+        static public void InitBasicTypes()
+        {
+            AddTypeEditorFactory(typeof(string), (ObjectAccessor obj) =>
+            {
+                return new FieldEditorString(obj);
+            }, "");
+
+            AddTypeEditorFactory(typeof(Single), (ObjectAccessor obj) =>
+            {
+                return new FieldEditorFloat(obj);
+            }, 0);
+
+            AddTypeEditorFactory(typeof(Int16), (ObjectAccessor obj) =>
+            {
+                return new FieldEditorInt<Int16>(obj);
+            }, 0);
+
+            AddTypeEditorFactory(typeof(Int32), (ObjectAccessor obj) =>
+            {
+                return new FieldEditorInt<Int32>(obj);
+            }, 0);
+
+            AddTypeEditorFactory(typeof(Byte), (ObjectAccessor obj) =>
+            {
+                return new FieldEditorInt<Byte>(obj);
+            }, 0);
+
+            AddTypeEditorFactory(typeof(Boolean), (ObjectAccessor obj) =>
+            {
+                return new FieldEditorBool(obj);
+            }, false);
+        }
+
+        public static object CreateObject(Type type)
+        {
+            if (editorFactories.ContainsKey(type))
+                return editorFactories[type].defaultValue;
+            else
+            {
+                return System.Activator.CreateInstance(type, new object[] { });
+            }
+        }
+
+        public static void InitGameTypes()
+        {
+            FieldOverrides overrides = null;
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.ModInformation));
+            overrides.OverrideFieldObjectReference("ModImagePath_1920x1280", "Textures", true);
+            overrides.OverrideFieldObjectReference("PortraitPath", "Textures", true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Gameplay.Weapon));
+            overrides.OverrideFieldObjectReference("BeamTexture", "Textures", false);
+            overrides.OverrideFieldObjectReference("ProjectileTexturePath", "Textures", false);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Technology.LeadsToTech));
+            overrides.OverrideFieldObjectReference("UID", TechSpec.Name, true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Technology.UnlockedBuilding));
+            overrides.OverrideFieldObjectReference("Name", BuildingSpec.Name, true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Technology.UnlockedMod));
+            overrides.OverrideFieldObjectReference("ModuleUID", ModuleSpec.Name, true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Technology.UnlockedTroop));
+            overrides.OverrideFieldObjectReference("Name", TroopSpec.Name, true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Technology.UnlockedHull));
+            //overrides.OverrideFieldObjectReference("Name", "Hulls", true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Technology));
+            overrides.OverrideFieldLocString("DescriptionIndex");
+            overrides.OverrideFieldLocString("NameIndex");
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Troop));
+            overrides.OverrideFieldObjectReference("TexturePath", "Textures", true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Building));
+            overrides.OverrideFieldLocString("NameTranslationIndex");
+            overrides.OverrideFieldLocString("DescriptionIndex");
+            overrides.OverrideFieldLocString("ShortDescriptionIndex");
+            overrides.OverrideFieldObjectReference("Weapon", WeaponGroup.Name, false);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Artifact));
+            overrides.OverrideFieldLocString("DescriptionIndex");
+            overrides.OverrideFieldLocString("NameIndex");
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Gameplay.ShipModule));
+            overrides.OverrideFieldLocString("DescriptionIndex");
+            overrides.OverrideFieldLocString("NameIndex");
+            overrides.IgnoreField("ModuleCenter");
+            overrides.IgnoreField("installedSlot");
+            overrides.IgnoreField("hangarShip");
+            overrides.IgnoreField("LinkedModulesList");
+            overrides.IgnoreField("Center");
+            overrides.IgnoreField("moduleCenter");
+            overrides.OverrideFieldObjectReference("WeaponType", WeaponGroup.Name, false);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Outcome));
+            overrides.OverrideFieldObjectReference("TroopsGranted", TroopSpec.Name, true);
+            overrides.OverrideFieldObjectReference("TroopsToSpawn", TroopSpec.Name, true);
+            overrides.OverrideFieldObjectReference("UnlockTech", TechSpec.Name, true);
+
+            overrides.OverrideFieldObjectReference("FriendlyShipsToSpawn", HullsGroup.Name, true);
+            overrides.OverrideFieldObjectReference("RemnantShipsToSpawn", HullsGroup.Name, true);
         }
     }
 }

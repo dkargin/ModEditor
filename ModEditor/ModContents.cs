@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using System.Xml;
 using System.Xml.Serialization;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace ModEditor
 {    
@@ -19,7 +20,7 @@ namespace ModEditor
     /// Wraps item, i.e Tech, Device, or generic data. 
     /// Stores active ui information concerned to selected node
     /// </summary>
-    public class Item
+    public class Item : IDockContent
     {
         public Controller controller;
         public Object target;          // actual gamedata object
@@ -486,6 +487,7 @@ namespace ModEditor
             AddController(new ModEditor.Controllers.TexturesGroup(this));
             AddController(new ModEditor.Controllers.TroopSpec(this));
             AddController(new ModEditor.Controllers.WeaponGroup(this));
+            AddController(new ModEditor.Controllers.ShipsGroup(this));
 
             AddController(modInfoController);
             AddController(stringsController);

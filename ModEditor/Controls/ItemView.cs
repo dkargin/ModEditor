@@ -17,10 +17,10 @@ namespace ModEditor
             InitializeComponent();
         }
         
-        public class ItemFieldCallback : ModEditor.FieldCallback
+        public class ItemFieldAccessor : ModEditor.FieldAccessor
         {
             public Item item;
-            public ItemFieldCallback(Item item)
+            public ItemFieldAccessor(Item item)
             {
                 this.item = item;
             }
@@ -46,11 +46,11 @@ namespace ModEditor
             }
         }
 
-        ItemFieldCallback callback;
+        ItemFieldAccessor callback;
 
         public void Init(System.Type typedef, ModEditor.Item item)
         {            
-            callback = new ItemFieldCallback(item);
+            callback = new ItemFieldAccessor(item);
             this.valueType.Text = typedef.Name;
 
             this.SuspendLayout();

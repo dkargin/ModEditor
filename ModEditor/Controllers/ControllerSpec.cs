@@ -64,6 +64,7 @@ namespace ModEditor.Controllers
             }
             catch (Exception ex)
             {
+                MainForm.LogErrorString(ex.Message);
             }
             var newTime = info.LastWriteTime;
             item.fileTime = newTime;
@@ -367,13 +368,21 @@ namespace ModEditor.Controllers
         public WeaponGroup(ModContents mod)
             : base(mod)
         {
-            this.groupName = "Weapons";
+            this.groupName = Name;
 
             //fieldStringToken.Add(
             serializer = Ship_Game.ResourceManager.weapon_serializer;
             /*
             OverrideFieldObjectReference("BeamTexture", "Textures");
             OverrideFieldObjectReference("ProjectileTexturePath", "Textures");           */
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "Weapons";
+            }
         }
 
         public override Dictionary<string, Ship_Game.Gameplay.Weapon> GetStorage()
@@ -393,8 +402,21 @@ namespace ModEditor.Controllers
             : base(mod)
         {
             fileExtension = ".xnb";
-            groupName = "Textures";
+            groupName = Name;
             serializer = null;
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "Textures";
+            }
+        }
+
+        public override Control GenerateControl(Item item)
+        {
+            return new ModEditor.ModelViewerControl();
         }
 
         public override Dictionary<string, Texture2D> GetStorage()
@@ -443,7 +465,15 @@ namespace ModEditor.Controllers
             : base(mod)
         {
             //serializer = Ship_Game.ResourceManager.weapon_serializer;
-            groupName = "Exploration Events";
+            groupName = Name;
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "Exploration Events";
+            }
         }
 
         public override Dictionary<string, Ship_Game.ExplorationEvent> GetStorage()
@@ -476,13 +506,22 @@ namespace ModEditor.Controllers
         }
     }
     */
+    // Is it base hull
     public class HullsGroup : ControllerSpec<Ship_Game.ShipData>
     {
         public HullsGroup(ModContents mod)
             : base(mod)
         {
-            groupName = "Hulls";
+            groupName = Name;
             //OverrideFieldObjectReference("IconPath", "Textures");
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "Hulls";
+            }
         }
 
         public override Dictionary<string, Ship_Game.ShipData> GetStorage()
@@ -491,16 +530,47 @@ namespace ModEditor.Controllers
         }
     }
 
+    public class ShipsGroup : ControllerSpec<Ship_Game.Gameplay.Ship>
+    {
+        public ShipsGroup(ModContents mod)
+            : base(mod)
+        {
+            groupName = Name;
+            //OverrideFieldObjectReference("IconPath", "Textures");
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "Ships";
+            }
+        }
+
+        public override Dictionary<string, Ship_Game.Gameplay.Ship> GetStorage()
+        {
+            return Ship_Game.ResourceManager.ShipsDict;
+        }
+    }
+
     public class TechSpec : ControllerSpec<Ship_Game.Technology>
     {
         public TechSpec(ModContents mod)
             : base(mod)
         {
-            groupName = "Technology";
+            groupName = Name;
             /*
             this.OverrideFieldLocString("DescriptionIndex");
             this.OverrideFieldLocString("NameIndex");*/
             //OverrideFieldObjectReference("IconPath", "Textures");
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "Technology";
+            }
         }
 
         override public Dictionary<string, Ship_Game.Technology> GetStorage()
@@ -514,10 +584,18 @@ namespace ModEditor.Controllers
         public TroopSpec(ModContents mod)
             : base(mod)
         {
-            groupName = "Troops";
+            groupName = Name;
             /*
             //OverrideFieldObjectReference("Icon", "Textures");
             OverrideFieldObjectReference("TexturePath", "Textures");*/
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "Troops";
+            }
         }
 
         override public Dictionary<string, Ship_Game.Troop> GetStorage()
@@ -531,7 +609,7 @@ namespace ModEditor.Controllers
         public BuildingSpec(ModContents mod)
             : base(mod)
         {
-            groupName = "Buildings";
+            groupName = Name;
             XmlAttributeOverrides overrides = new XmlAttributeOverrides();
             //overrides.Add(targetType, "weapon", new XmlAttributes() { XmlIgnore = true });
             serializer = new XmlSerializer(typeof(Ship_Game.Building), overrides);
@@ -542,6 +620,15 @@ namespace ModEditor.Controllers
             OverrideFieldObjectReference("Weapon", "Weapons");
             //OverrideFieldObjectReference("Icon", "Textures");   */        
         }
+
+        public static string Name
+        {
+            get
+            {
+                return "Buildings";
+            }
+        }
+
         override public Dictionary<string, Ship_Game.Building> GetStorage()
         {
             return Ship_Game.ResourceManager.BuildingsDict;
@@ -553,12 +640,21 @@ namespace ModEditor.Controllers
         public ArtifactsSpec(ModContents mod)
             : base(mod)
         {
-            groupName = "Artifacts";
+            groupName = Name;
             /*
             this.OverrideFieldLocString("DescriptionIndex");
             this.OverrideFieldLocString("NameIndex");*/
            // OverrideFieldObjectReference("Icon", "Textures");
         }
+
+        public static string Name
+        {
+            get
+            {
+                return "Artifacts";
+            }
+        }
+
         override public Dictionary<string, Ship_Game.Artifact> GetStorage()
         {
             return Ship_Game.ResourceManager.ArtifactsDict;
@@ -570,7 +666,7 @@ namespace ModEditor.Controllers
         public ModuleSpec(ModContents mod)
             : base(mod)
         {
-            groupName = "ShipModules";
+            groupName = Name;
             /*
             this.OverrideFieldLocString("DescriptionIndex");
             this.OverrideFieldLocString("NameIndex");
@@ -583,6 +679,14 @@ namespace ModEditor.Controllers
             this.OverrideFieldObjectReference("WeaponType", "Weapons");
 */
             //OverrideFieldObjectReference("IconTexturePath", "Textures");            
+        }
+
+        public static string Name
+        {
+            get
+            {
+                return "ShipModules";
+            }
         }
         /*
         public override XmlSerializer GetSerializer()

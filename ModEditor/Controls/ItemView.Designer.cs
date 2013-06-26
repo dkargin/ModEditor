@@ -10,18 +10,18 @@ namespace ModEditor
             System.Windows.Forms.Panel dataPanel;
             System.Windows.Forms.TableLayoutPanel headerContainer;
             this.dataTable = new ModEditor.Controls.PropertyGridExplorer();
-            this.panel1 = new System.Windows.Forms.Panel();
             this.gotoPrev = new System.Windows.Forms.Button();
             this.labelPath = new System.Windows.Forms.Label();
             this.labelType = new System.Windows.Forms.Label();
             this.valueType = new System.Windows.Forms.TextBox();
             this.valuePath = new System.Windows.Forms.TextBox();
             this.gotoNext = new System.Windows.Forms.Button();
+            this.panel1 = new System.Windows.Forms.Panel();
             dataPanel = new System.Windows.Forms.Panel();
             headerContainer = new System.Windows.Forms.TableLayoutPanel();
             dataPanel.SuspendLayout();
-            this.panel1.SuspendLayout();
             headerContainer.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // dataPanel
@@ -52,17 +52,6 @@ namespace ModEditor
             this.dataTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
             this.dataTable.Size = new System.Drawing.Size(392, 316);
             this.dataTable.TabIndex = 3;
-            // 
-            // panel1
-            // 
-            this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel1.Controls.Add(headerContainer);
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(394, 56);
-            this.panel1.TabIndex = 2;
             // 
             // headerContainer
             // 
@@ -143,6 +132,17 @@ namespace ModEditor
             this.gotoNext.Text = "Next";
             this.gotoNext.UseVisualStyleBackColor = true;
             // 
+            // panel1
+            // 
+            this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Controls.Add(headerContainer);
+            this.panel1.Location = new System.Drawing.Point(0, 0);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(394, 56);
+            this.panel1.TabIndex = 2;
+            // 
             // ItemView
             // 
             this.Controls.Add(this.panel1);
@@ -150,10 +150,10 @@ namespace ModEditor
             this.Name = "ItemView";
             this.Size = new System.Drawing.Size(394, 382);
             dataPanel.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
             headerContainer.ResumeLayout(false);
             headerContainer.PerformLayout();
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.ResumeLayout(false);
 
         }
