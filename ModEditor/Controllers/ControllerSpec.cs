@@ -64,7 +64,7 @@ namespace ModEditor.Controllers
             }
             catch (Exception ex)
             {
-                MainForm.LogErrorString(ex.Message);
+                ModEditor.Controls.PanelErrors.LogErrorString(ex.Message);
             }
             var newTime = info.LastWriteTime;
             item.fileTime = newTime;
@@ -189,7 +189,8 @@ namespace ModEditor.Controllers
                     item.node.Remove();
                 // remove it from open tabs
                 if (item.page != null)
-                    (item.page.Parent as TabControl).TabPages.Remove(item.page);
+                    item.page.Unlink();
+                    //(item.page.Parent as TabControl).TabPages.Remove(item.page);
             }
             catch (Exception)
             {

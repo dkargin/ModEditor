@@ -10,9 +10,9 @@ using ModEditor.Controls;
 
 namespace ModEditor
 {
-    public partial class ItemView : UserControl
+    public partial class PanelItemView : WeifenLuo.WinFormsUI.Docking.DockContent
     {       
-        public ItemView()
+        public PanelItemView()
         {
             InitializeComponent();
         }
@@ -60,6 +60,10 @@ namespace ModEditor
             this.callback.item.dataChanged += (object sender, EventArgs e) => { UpdateData(); };
 
             UpdateData();          
+        }
+
+        public void Unlink()
+        {
         }
         
         public void UpdateData()

@@ -113,7 +113,7 @@ namespace ModEditor
             }
             catch(Exception ex)
             {
-                MainForm.LogErrorString(ex.Message);
+                PanelErrors.LogErrorString(ex.Message);
             }                     
         }
 

@@ -722,7 +722,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
-                MainForm.LogErrorString(e.Message);
+                PanelErrors.LogErrorString(e.Message);
             }
             return 0;
         }

@@ -39,7 +39,13 @@ namespace ModEditor
 
         private bool m_bSaveLayout = true;
         private DeserializeDockContent m_deserializeDockContent;
-        ToolSolutionExplorer solutionExplorer = new ToolSolutionExplorer();
+
+        PanelSolutionExplorer solutionExplorer;
+        PanelErrors panelErrors = new PanelErrors();
+
+        List<PanelItemView> itemPanels = new List<PanelItemView>();
+
+        TreeView ModContentsTree;
          
         public MainForm()
         {
@@ -49,9 +55,30 @@ namespace ModEditor
             FieldEditorManager.InitBasicTypes();
             FieldEditorManager.InitGameTypes();
 
-            solutionExplorer.RightToLeftLayout = RightToLeftLayout;
-
+            solutionExplorer = new PanelSolutionExplorer(this);
+            m_deserializeDockContent = new DeserializeDockContent(GetContentFromPersistString);
+            //solutionExplorer.RightToLeftLayout = RightToLeftLayout;
+            
+            
             solutionExplorer.Show(workArea);
+            
+            panelErrors.Show(workArea);            
+            
+            ModContentsTree = solutionExplorer.ModContentsTree;
+
+            try
+            {
+
+                contentsBase = new ModContents(ModContentsTree, null);
+                contentsBase.SetName("Base");
+                PanelErrors.LogInfoString("Startup is complete");
+            }
+            catch (Exception ex)
+            {
+                PanelErrors.LogErrorString(ex.Message);
+            }
+
+            Status = EditorStatus.Empty;
             /// Strings test
             //string source = "Laser weapons factory. Provides production bonus ${Building.SoftAttack} per assigned colonist. Also can defend colony using its production directly from the assembly line, shooting orbital targets at range ${Weapon.Range}. Needs ${Building.Maintenance} maintance per turn.";
             //Ship_Game.Building building = new Ship_Game.Building();
@@ -74,6 +101,42 @@ namespace ModEditor
             }
         }
 
+        private IDockContent GetContentFromPersistString(string persistString)
+        {
+            if (persistString == typeof(PanelErrors).ToString())
+                return panelErrors;
+            else if (persistString == typeof(PanelSolutionExplorer).ToString())
+                return solutionExplorer;
+                /*
+            else if (persistString == typeof(DummyPropertyWindow).ToString())
+                return m_propertyWindow;
+            else if (persistString == typeof(DummyToolbox).ToString())
+                return m_toolbox;
+            else if (persistString == typeof(DummyOutputWindow).ToString())
+                return m_outputWindow;
+            else if (persistString == typeof(DummyTaskList).ToString())
+                return m_taskList;*/
+            else
+            {
+                /*
+                string[] parsedStrings = persistString.Split(new char[] { ',' });
+                if (parsedStrings.Length != 3)
+                    return null;
+
+                if (parsedStrings[0] != typeof(DummyDoc).ToString())
+                    return null;
+
+                DummyDoc dummyDoc = new DummyDoc();
+                if (parsedStrings[1] != string.Empty)
+                    dummyDoc.FileName = parsedStrings[1];
+                if (parsedStrings[2] != string.Empty)
+                    dummyDoc.Text = parsedStrings[2];
+                
+                return dummyDoc;*/
+                return null;
+            }
+        }
+
         public void InitXNA(Game game, GraphicsDeviceManager graphics)
         {
             try
@@ -81,7 +144,7 @@ namespace ModEditor
                 baseGame = game;
                 // need this to load textures and models
                 graphics.ApplyChanges();
-                LogInfoString("XNA attached");
+                PanelErrors.LogInfoString("XNA attached");
             }
             catch(Exception e)
 			{
@@ -120,7 +183,7 @@ namespace ModEditor
             {
                 Status = EditorStatus.Saving;
                 contentsMod.SaveMod(ModEntryPath);
-                LogInfoString("Saving complete");
+                PanelErrors.LogInfoString("Saving complete");
                 Status = EditorStatus.Ready;
             }
         }
@@ -140,7 +203,7 @@ namespace ModEditor
                     // 1. Load contents
                     Ship_Game.ResourceManager.Initialize(baseGame.Content);
                     contentsBase.PopulateData(GetGamePath()+"Content", true);
-                    LogInfoString("Base data has been loaded");
+                    PanelErrors.LogInfoString("Base data has been loaded");
                     contentsBase.state = ModContents.State.Loaded;
                     // 2. Analyze contents
                     //modReady = true;
@@ -167,9 +230,9 @@ namespace ModEditor
             {
                 contentsMod = new ModContents(ModContentsTree, contentsBase);
                 contentsMod.LoadMod(ModEntryPath);
-                LogInfoString("Mod data has been loaded");
+                PanelErrors.LogInfoString("Mod data has been loaded");
                 contentsBase.UpdateUI();
-                LogInfoString("Done");
+                PanelErrors.LogInfoString("Done");
                 Status = EditorStatus.Ready;
             }
             catch (Exception e)
@@ -258,23 +321,6 @@ namespace ModEditor
             }
         } 
 
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-            try
-            {
-
-                contentsBase = new ModContents(ModContentsTree, null);
-                contentsBase.SetName("Base");
-                LogInfoString("Startup is complete");
-            }
-            catch (Exception ex)
-            {
-                LogErrorString(ex.Message);
-            }
-            Status = EditorStatus.Empty;
-        }
-
         private void OnViewportResize(object sender, EventArgs e)
         {           
         }
@@ -287,9 +333,9 @@ namespace ModEditor
             mDevice.Present();*/
         }
 
-        private TabPage FindTabByTag(Object tag)
+        private PanelItemView FindTabByTag(Object tag)
         {
-            foreach (TabPage tab in this.EditorTabs.TabPages)
+            foreach (PanelItemView tab in this.itemPanels)
             {
                 if (tab.Tag == tag)
                     return tab;
@@ -297,39 +343,13 @@ namespace ModEditor
             return null;
         }
 
-
-        static int maxLogLines = 10;
-
-        List<string> logMessages = new List<string>();
-
         static public void SelectItem(Item item)
         {
             if(mainForm != null)
             {
                 mainForm.ExploreItem(item);
             }
-        }
-
-        static public void LogNewString(string message)
-        {
-            if (mainForm != null)
-            {
-                mainForm.logMessages.Add(message);               
-                if(mainForm.logMessages.Count > maxLogLines)
-                    mainForm.logMessages.RemoveAt(0);
-                mainForm.logView.Lines = mainForm.logMessages.ToArray();
-            }
-        }
-
-        static public void LogInfoString(string message)
-        {           
-            LogNewString(String.Format("Info: {0}", message));
-        }
-
-        static public void LogErrorString(string message)
-        {
-            LogNewString(String.Format("Error: {0}", message));
-        }
+        }        
 
         public void ExploreItem(ModEditor.Item item)
         {
@@ -341,62 +361,32 @@ namespace ModEditor
                     Control control = item.GenerateControl();
                     if (control != null)
                     {
-                        item.page = new TabPage(item.name);
-                        item.page.Tag = item;
-                        control.Dock = DockStyle.Fill;
-                        item.page.Controls.Add(control);
-
-                        this.EditorTabs.TabPages.Add(item.page);
-                        this.EditorTabs.SelectedTab = item.page;
+                        PanelItemView page = new PanelItemView()
+                        {
+                            Text = item.Name,
+                            Tag = item,
+                        };
+                        page.Init(item.controller.TargetType, item);
+                        item.page = page;
+                        itemPanels.Add(page);
+                        page.Show(workArea);
+                        page.Select();
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    PanelErrors.LogErrorString(ex.Message);
                 }
                 ResumeLayout();
             }
             else
-            {
-                this.EditorTabs.SelectedTab = item.page;
+            {                
+                item.page.Select();                
             }
 
             if (item.node != null)
             {
                 item.node.TreeView.SelectedNode = item.node;
-            }
-        }
-
-        private void ModContentsTree_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left)
-            {
-                TreeNode selected = e.Node;
-                ModEditor.Item item = selected.Tag as ModEditor.Item;                
-                if (selected != null && item != null)
-                {
-                    ExploreItem(item);
-                }
-            }
-        }
-
-        private void ModContentsTree_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Right)
-            {
-                // Select the clicked node
-                TreeNode selected = ModContentsTree.GetNodeAt(e.X, e.Y);
-                ModContentsTree.SelectedNode = selected;
-
-                if (selected != null && selected.Tag != null )
-                {
-                    ModEditor.Item item = selected.Tag as ModEditor.Item;
-                    if(item != null)
-                    {
-                        ContextMenuStrip menu = item.GenerateContextMenu();
-                        if(menu != null)
-                            menu.Show(ModContentsTree, e.Location);                        
-                    }                    
-                }
             }
         }
 
@@ -473,31 +463,26 @@ namespace ModEditor
             System.Diagnostics.Process.Start("StarDrive.exe");
         }
 
-        private void ModContentsTree_BeforeLabelEdit(object sender, NodeLabelEditEventArgs e)
-        {
-            Item item = e.Node.Tag as Item;
-            if (item == null || !item.isNameEditable)
-            {
-                e.CancelEdit = true;
-            }            
-        }
-
-        private void ModContentsTree_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)
-        {
-            Item item = e.Node.Tag as Item;
-            if (item == null || !item.isNameEditable)
-            {
-                e.CancelEdit = true;
-            }
-            else if (!item.controller.RenameItem(item, e.Label))
-            {
-                e.CancelEdit = true;
-            }
-        }
-
         private void checkDataToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CheckExternalModifications();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            string configFile = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "DockPanel.config");
+            if (m_bSaveLayout)
+                workArea.SaveAsXml(configFile);
+            else if (File.Exists(configFile))
+                File.Delete(configFile);
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            string configFile = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "DockPanel.config");
+
+            if (File.Exists(configFile))
+                workArea.LoadFromXml(configFile, m_deserializeDockContent);
         }
     }
 }

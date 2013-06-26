@@ -33,7 +33,7 @@ namespace ModEditor.Controllers
         {
             if (item.target == null)
                 return null;
-            ItemView explorer = new ItemView();
+            PanelItemView explorer = new PanelItemView();
             Ship_Game.ModInformation targetObj = (Ship_Game.ModInformation)item.target;
             explorer.Init(typeof(Ship_Game.ModInformation), item);
             return explorer;

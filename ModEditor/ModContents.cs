@@ -20,7 +20,7 @@ namespace ModEditor
     /// Wraps item, i.e Tech, Device, or generic data. 
     /// Stores active ui information concerned to selected node
     /// </summary>
-    public class Item : IDockContent
+    public class Item// : IDockContent
     {
         public Controller controller;
         public Object target;          // actual gamedata object
@@ -33,7 +33,7 @@ namespace ModEditor
         protected string sourcePath = "";
 
         public TreeNode node;           // Assigned tree node
-        public TabPage page;            // Assigned tab page
+        public PanelItemView page;            // Assigned tab page
 
         public DateTime fileTime;       // Cached time to check if file was modified
 
@@ -189,8 +189,8 @@ namespace ModEditor
         {
             return Prev != null || Next != null;
         }
-        
-        public TabPage GetTabPage()
+
+        public PanelItemView GetTabPage()
         {
             return page;
         }
@@ -331,7 +331,7 @@ namespace ModEditor
                 return null;
             if (targetType == null)
                 return null;
-            ItemView explorer = new ItemView();
+            PanelItemView explorer = new PanelItemView();
             explorer.Init(targetType, item);
             return explorer;
         }
@@ -537,7 +537,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
-                MainForm.LogErrorString(e.Message);
+                PanelErrors.LogErrorString(e.Message);
             }
             return false;
         }
@@ -555,7 +555,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
-                MainForm.LogErrorString(e.Message);
+                PanelErrors.LogErrorString(e.Message);
             }
             return false;
         }
@@ -635,7 +635,7 @@ namespace ModEditor
             }
             catch (Exception e)
             {
-                MainForm.LogErrorString(e.Message);
+                PanelErrors.LogErrorString(e.Message);
             }
             UpdateUI();
         }

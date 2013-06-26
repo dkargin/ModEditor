@@ -80,6 +80,12 @@
     <Compile Include="Controls\ListItemCaption.Designer.cs">
       <DependentUpon>ListItemCaption.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\PanelErrors.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\PanelErrors.Designer.cs">
+      <DependentUpon>PanelErrors.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\PropertyGridExplorer.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -101,17 +107,17 @@
     <Compile Include="Controls\TabHostEx.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Controls\ToolSolutionExplorer.cs">
+    <Compile Include="Controls\PanelSolutionExplorer.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Controls\ToolSolutionExplorer.Designer.cs">
-      <DependentUpon>ToolSolutionExplorer.cs</DependentUpon>
+    <Compile Include="Controls\PanelSolutionExplorer.Designer.cs">
+      <DependentUpon>PanelSolutionExplorer.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ToolWindow.cs">
+    <Compile Include="Controls\PanelWindow.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Controls\ToolWindow.Designer.cs">
-      <DependentUpon>ToolWindow.cs</DependentUpon>
+    <Compile Include="Controls\PanelWindow.Designer.cs">
+      <DependentUpon>PanelWindow.cs</DependentUpon>
     </Compile>
     <Compile Include="FieldOverrides.cs" />
     <Compile Include="FormEditContainer.cs">
@@ -150,11 +156,11 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="XNATool\GraphicsDeviceService.cs" />
-    <Compile Include="Controls\ItemView.cs">
-      <SubType>UserControl</SubType>
+    <Compile Include="Controls\PanelItemView.cs">
+      <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Controls\ItemView.Designer.cs">
-      <DependentUpon>ItemView.cs</DependentUpon>
+    <Compile Include="Controls\PanelItemView.Designer.cs">
+      <DependentUpon>PanelItemView.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -171,6 +177,9 @@
     <EmbeddedResource Include="Controls\ListItemCaption.resx">
       <DependentUpon>ListItemCaption.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PanelErrors.resx">
+      <DependentUpon>PanelErrors.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\PropertyGridExplorer.resx">
       <DependentUpon>PropertyGridExplorer.cs</DependentUpon>
     </EmbeddedResource>
@@ -180,8 +189,8 @@
     <EmbeddedResource Include="Controls\StringEditor.resx">
       <DependentUpon>StringEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\ToolSolutionExplorer.resx">
-      <DependentUpon>ToolSolutionExplorer.cs</DependentUpon>
+    <EmbeddedResource Include="Controls\PanelSolutionExplorer.resx">
+      <DependentUpon>PanelSolutionExplorer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormEditContainer.resx">
       <DependentUpon>FormEditContainer.cs</DependentUpon>
@@ -195,8 +204,8 @@
     <EmbeddedResource Include="FormAbout.resx">
       <DependentUpon>FormAbout.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\ItemView.resx">
-      <DependentUpon>ItemView.cs</DependentUpon>
+    <EmbeddedResource Include="Controls\PanelItemView.resx">
+      <DependentUpon>PanelItemView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormSimpleEditContainer.resx">
       <DependentUpon>FormSimpleEditContainer.cs</DependentUpon>
