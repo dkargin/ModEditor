@@ -194,8 +194,7 @@ namespace ModEditor
         {
             return page;
         }
-    }
-
+    }    
     /// <summary>
     /// Defines methods to interact with specific mod objects
     /// </summary>
@@ -208,9 +207,6 @@ namespace ModEditor
 
         public bool isBase;
 
-        /*
-        public Dictionary<string, List<ModEditorAttribute>> customAttributes = new Dictionary<string, List<ModEditorAttribute>>();
-         */
         // Local cache for items created by this controller/mod
         protected Dictionary<string, Item> localCache = new Dictionary<string, Item>();
 
@@ -260,30 +256,6 @@ namespace ModEditor
             return false;
         }
 
-        /*
-        // Add custom field attribute to modify ItemExplorer sheet generation
-        public void AddCustomAttribute(string fieldName, ModEditorAttribute attrib)
-        {
-            if (!customAttributes.ContainsKey(fieldName))
-                customAttributes.Add(fieldName, new List<ModEditorAttribute>());
-            customAttributes[fieldName].Add(attrib);
-        }
-        // Mark field as "string token"            
-        public void OverrideFieldLocString(string fieldName)
-        {
-            PropertyGridExplorer.AddOverridedAttribute(targetType, fieldName, new LocStringToken());
-        }
-        // Mark field as "object reference"            
-        public void OverrideFieldObjectReference(string fieldName, string group)
-        {
-            PropertyGridExplorer.AddOverridedAttribute(targetType, fieldName, new ObjectReference(group));
-        }
-        // Ignore field
-        public void IgnoreField(string fieldName)
-        {
-            PropertyGridExplorer.AddOverridedAttribute(targetType, fieldName, new IgnoreByEditor());
-        }*/
-
         public string GetGroupFolder()
         {
             return groupName;
@@ -301,29 +273,7 @@ namespace ModEditor
         {
             return localCache;
         }
-
-        /*
-        // Obtain all the attributes within spedified field
-        public List<ModEditorAttribute> GetFieldAttribute(System.Reflection.FieldInfo fieldInfo)
-        {
-            List<ModEditorAttribute> result = new List<ModEditorAttribute>();
-
-            // Get attributes from local override list
-            if (customAttributes.ContainsKey(fieldInfo.Name))
-            {
-                var list = customAttributes[fieldInfo.Name];
-                result.AddRange(list);
-            }
-
-            // Get attributes from class definition                
-            foreach (ModEditorAttribute attribute in fieldInfo.GetCustomAttributes(true))
-            {
-                result.Add(attribute);
-            }
-
-            return result;
-        }*/
-
+        
         // Generate control to edit item contents. Most times it is ItemExplorer property grid
         public virtual Control GenerateControl(Item item)
         {
@@ -334,6 +284,11 @@ namespace ModEditor
             PanelItemView explorer = new PanelItemView();
             explorer.Init(targetType, item);
             return explorer;
+        }
+
+        public void CheckDataIntegrity(List<ItemReport> data)
+        {
+            
         }
 
         public abstract void ObtainModData(string basePath, bool isBase);
@@ -390,6 +345,22 @@ namespace ModEditor
             CheckCacheModifications(modifiedItems);
         }
     }
+    // Report for item problems
+    public class ItemReport
+    {
+        public Item item;
+
+        public virtual bool Check()
+        {
+            return false;
+        }
+
+        public virtual string Message()
+        {
+            return "Generic message";
+        }
+    }
+
 
     public class ModContents
     {        
@@ -488,9 +459,24 @@ namespace ModEditor
             AddController(new ModEditor.Controllers.TroopSpec(this));
             AddController(new ModEditor.Controllers.WeaponGroup(this));
             AddController(new ModEditor.Controllers.ShipsGroup(this));
+            AddController(new ModEditor.Controllers.RacesGroup(this));
+
+            AddController(new ModEditor.Controllers.DiplomacyDialogGroup(this));
+            AddController(new ModEditor.Controllers.EncounterDialogGroup(this));
+            
 
             AddController(modInfoController);
             AddController(stringsController);
+        }
+
+        public List<ItemReport> CheckDataIntegrity()
+        {
+            List<ItemReport> result = new List<ItemReport>();
+            foreach (var record in controllers)
+            {
+                record.Value.CheckDataIntegrity(result);
+            }
+            return result;
         }
 
         public Controller GetController(string group)

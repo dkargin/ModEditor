@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModEditor", "ModEditor\ModE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinFormsContentLoading", "..\..\study\WinFormsContentSample_ARCHIVE_3_1\WinFormsContentLoadingSample\WinFormsContentLoading\WinFormsContentLoading.csproj", "{0679C323-EC65-40FA-854A-780F1FE4A00B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DockSample", "..\..\study\DockPanel_2.4_Source\Src\DockSample\DockSample.csproj", "{40793A27-478B-4357-B4C3-FC8943131F3D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,16 +49,6 @@ Global
 		{0679C323-EC65-40FA-854A-780F1FE4A00B}.Release|Mixed Platforms.Build.0 = Release|x86
 		{0679C323-EC65-40FA-854A-780F1FE4A00B}.Release|x86.ActiveCfg = Release|x86
 		{0679C323-EC65-40FA-854A-780F1FE4A00B}.Release|x86.Build.0 = Release|x86
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{40793A27-478B-4357-B4C3-FC8943131F3D}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

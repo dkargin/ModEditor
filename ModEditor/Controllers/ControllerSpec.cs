@@ -701,5 +701,103 @@ namespace ModEditor.Controllers
         }
     }
 
+    public class RacesGroup : ControllerSpec<Ship_Game.EmpireData>
+    {
+        public RacesGroup(ModContents mod)
+            : base(mod)
+        {
+            // rootItem.name = "ModInfo";
+            groupName = Name;
+            targetType = typeof(Ship_Game.EmpireData);
+            /*
+            OverrideFieldObjectReference("ModImagePath_1920x1280", "Textures");
+            OverrideFieldObjectReference("PortraitPath", "Textures");*/
+        }
+        public static string Name
+        {
+            get
+            {
+                return "Races";
+            }
+        }
+
+        override public Dictionary<string, Ship_Game.EmpireData> GetStorage()
+        {
+            Dictionary<string, Ship_Game.EmpireData> storage = new Dictionary<string, Ship_Game.EmpireData>();
+            int index = 0;
+            foreach (var item in Ship_Game.ResourceManager.Empires)
+            {
+                storage.Add(String.Format("Race {0}", index++), item);
+            }
+            return storage;
+        }
+    }
+
+    public class EncounterDialogGroup : ControllerSpec<Ship_Game.Encounter>
+    {
+        public EncounterDialogGroup(ModContents mod)
+            : base(mod)
+        {
+            // rootItem.name = "ModInfo";
+            groupName = Name;
+            targetType = typeof(Ship_Game.Encounter);
+            /*
+            OverrideFieldObjectReference("ModImagePath_1920x1280", "Textures");
+            OverrideFieldObjectReference("PortraitPath", "Textures");*/
+        }
+        public static string Name
+        {
+            get
+            {
+                return "Encounter Dialogs";
+            }
+        }
+
+        override public Dictionary<string, Ship_Game.Encounter> GetStorage()
+        {
+            Dictionary<string, Ship_Game.Encounter> storage = new Dictionary<string, Ship_Game.Encounter>();
+            int index = 0;
+            foreach (var item in Ship_Game.ResourceManager.Encounters)
+            {
+                storage.Add(String.Format("Dialog {0}", index++), item);
+            }
+            return storage;
+        }
+    }
+
+    public class DiplomacyDialogGroup : ControllerSpec<Ship_Game.Gameplay.DiplomacyDialog>
+    {
+        public DiplomacyDialogGroup(ModContents mod)
+            : base(mod)
+        {
+            // rootItem.name = "ModInfo";
+            groupName = Name;
+            targetType = typeof(Ship_Game.Gameplay.DiplomacyDialog);
+            /*
+            OverrideFieldObjectReference("ModImagePath_1920x1280", "Textures");
+            OverrideFieldObjectReference("PortraitPath", "Textures");*/
+        }
+        public static string Name
+        {
+            get
+            {
+                return "DiplomacyDialogs";
+            }
+        }
+
+        override public Dictionary<string, Ship_Game.Gameplay.DiplomacyDialog> GetStorage()
+        {
+            return Ship_Game.ResourceManager.DDDict;
+            /*
+            Dictionary<string, Ship_Game.Gameplay.DiplomacyDialog> storage = new Dictionary<string, Ship_Game.Gameplay.DiplomacyDialog>();
+            int index = 0;
+            foreach(var item in Ship_Game.ResourceManager.DDDict)
+            {
+                storage.Add(String.Format("Dialog {0}", index++), item);
+            }
+            return storage;*/
+        }
+    }
+
     
 }
