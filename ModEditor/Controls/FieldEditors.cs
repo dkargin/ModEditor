@@ -222,6 +222,46 @@ namespace ModEditor
         }
     }
 
+    // Report for item problems
+    public class ItemReport
+    {
+        public Item item; 
+        public string path; /// path to specific field
+
+        /// check if the same error persists
+        public virtual bool Check()
+        {
+            return false;
+        }
+
+        public virtual string Message()
+        {
+            return "Something is wrong";
+        }
+    }
+
+    public class ItemReport_WrongReferenceField : ItemReport
+    {
+        //public object storage;
+        public string value;
+        public string group;
+
+        public virtual string GetReference()
+        {
+            return value;
+        }
+
+        public override bool Check()
+        {
+            return base.Check();
+        }
+
+        public override string Message()
+        {
+            return String.Format("'{0}' is invalid name for group '{1}'", value, group);
+        }
+    }
+
     #region Attributes
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class ModEditorAttribute : Attribute
@@ -850,10 +890,7 @@ namespace ModEditor
             if (type.IsGenericType)
             {
                 // If list
-                /*
-                if (type.GetInterfaces().Contains(typeof(IList)))
-                {
-                }*/
+                
                 if (type.Name.Equals("List`1"))
                 {
                     Type storedType = type.GetGenericArguments()[0];
@@ -946,6 +983,10 @@ namespace ModEditor
             overrides = GetFieldOverrides(typeof(Ship_Game.Gameplay.Weapon));
             overrides.OverrideFieldObjectReference("BeamTexture", "Textures", false);
             overrides.OverrideFieldObjectReference("ProjectileTexturePath", "Textures", false);
+            overrides.IgnoreField("moduleAttachedTo");
+            overrides.IgnoreField("owner");
+            overrides.IgnoreField("drowner");
+
 
             overrides = GetFieldOverrides(typeof(Ship_Game.Technology.LeadsToTech));
             overrides.OverrideFieldObjectReference("UID", TechSpec.Name, true);
@@ -988,6 +1029,8 @@ namespace ModEditor
             overrides.IgnoreField("LinkedModulesList");
             overrides.IgnoreField("Center");
             overrides.IgnoreField("moduleCenter");
+            overrides.IgnoreField("Parent");
+            overrides.IgnoreField("ParentOfDummy");
             overrides.OverrideFieldObjectReference("WeaponType", WeaponGroup.Name, false);
 
             overrides = GetFieldOverrides(typeof(Ship_Game.Outcome));
@@ -995,8 +1038,46 @@ namespace ModEditor
             overrides.OverrideFieldObjectReference("TroopsToSpawn", TroopSpec.Name, true);
             overrides.OverrideFieldObjectReference("UnlockTech", TechSpec.Name, true);
 
-            overrides.OverrideFieldObjectReference("FriendlyShipsToSpawn", HullsGroup.Name, true);
-            overrides.OverrideFieldObjectReference("RemnantShipsToSpawn", HullsGroup.Name, true);
+            overrides.OverrideFieldObjectReference("FriendlyShipsToSpawn", ShipsGroup.Name, true);
+            overrides.OverrideFieldObjectReference("RemnantShipsToSpawn", ShipsGroup.Name, true);
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.ShipData));
+            overrides.IgnoreField("ThrusterList");
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Gameplay.Ship));
+            overrides.IgnoreField("AreaOfOperation");
+            overrides.IgnoreField("BombBays");
+            overrides.IgnoreField("ExternalSlots");
+            overrides.IgnoreField("dying");
+            overrides.IgnoreField("disabled");
+            overrides.IgnoreField("Deleted");
+            overrides.IgnoreField("fleet");
+            overrides.IgnoreField("FleetCombatStatus");
+            overrides.IgnoreField("FleetOffset");
+            overrides.IgnoreField("guid");
+            overrides.IgnoreField("inborders");
+            overrides.IgnoreField("InCombat");
+            overrides.IgnoreField("InCombatTimer");
+            overrides.IgnoreField("InFrustum");
+            overrides.IgnoreField("Inhibited");
+            overrides.IgnoreField("InhibitedTimer");
+            overrides.IgnoreField("InhibitionRadius");
+            overrides.IgnoreField("inSensorRange");
+            overrides.IgnoreField("isCloaked");
+            overrides.IgnoreField("isColonyShip");
+            overrides.IgnoreField("isDecloaking");
+            overrides.IgnoreField("isJumping");
+            overrides.IgnoreField("isThrusting");
+            overrides.IgnoreField("isTurning");
+            overrides.IgnoreField("loyalty");
+            overrides.IgnoreField("Mothership");
+            overrides.IgnoreField("OrbitalBeams");
+            overrides.IgnoreField("Weapons");
+            overrides.IgnoreField("TroopList");
+
+            overrides = GetFieldOverrides(typeof(Ship_Game.Gameplay.ModuleSlot));
+            overrides.IgnoreField("Parent");
+            overrides.IgnoreField("module");
         }
     }
 }

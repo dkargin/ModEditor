@@ -94,6 +94,10 @@ namespace ModEditor.Controls
             {
                 foreach (var fieldInfo in type.GetFields())
                 {
+                    if (fieldInfo.IsStatic)
+                        continue;
+                    if (fieldInfo.IsPrivate)
+                        continue;
                     try
                     {
                         TypeEditor editor = FieldEditorManager.GenerateEditor(new ObjectFieldAccessor(callback, fieldInfo));

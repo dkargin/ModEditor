@@ -286,7 +286,7 @@ namespace ModEditor
             return explorer;
         }
 
-        public void CheckDataIntegrity(List<ItemReport> data)
+        public virtual void CheckDataIntegrity(Action<ItemReport> data)
         {
             
         }
@@ -345,22 +345,6 @@ namespace ModEditor
             CheckCacheModifications(modifiedItems);
         }
     }
-    // Report for item problems
-    public class ItemReport
-    {
-        public Item item;
-
-        public virtual bool Check()
-        {
-            return false;
-        }
-
-        public virtual string Message()
-        {
-            return "Generic message";
-        }
-    }
-
 
     public class ModContents
     {        
@@ -469,14 +453,14 @@ namespace ModEditor
             AddController(stringsController);
         }
 
-        public List<ItemReport> CheckDataIntegrity()
+        public void CheckDataIntegrity(Action<ItemReport> reporter, Action<int> progress)
         {
-            List<ItemReport> result = new List<ItemReport>();
+            int index = 0;
             foreach (var record in controllers)
             {
-                record.Value.CheckDataIntegrity(result);
+                record.Value.CheckDataIntegrity(reporter);
+                progress(100 * (index++) / (controllers.Count));
             }
-            return result;
         }
 
         public Controller GetController(string group)

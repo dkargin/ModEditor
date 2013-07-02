@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,6 +42,92 @@ namespace ModEditor.Controllers
             foreach (var record in localCache)
             {
                 record.Value.RaiseDataChanged();
+            }
+        }
+
+        void CheckDataImpl(Action<ItemReport> reporter, Item item, string basePath, object source, Type type, List<ModEditorAttribute> attributes)
+        {       
+            if (FieldEditorManager.IsPrimitiveType(type))
+            {
+                // Dealing with primitive type
+                foreach (ModEditorAttribute attribute in attributes)
+                {
+                    if (attribute is LocStringToken)
+                    {                            
+                        int token = (int)Convert.ChangeType(source, typeof(int));
+                        if (!StringsController.TokenExists(token))
+                        {
+                            reporter(new ItemReport()
+                            {
+                                item = item,
+                                path = basePath,
+                            });
+                        }                           
+                    }
+                    else if (attribute is ObjectReference)
+                    {
+                        ObjectReference refAttrib = (attribute as ObjectReference);
+                        string reference = (string)source;
+                        if ("".Equals(reference) && refAttrib.allowEmpty)
+                            continue;
+                        ModContents mod = ModContents.GetMod();
+                        if (mod == null)
+                            return;
+
+                        Controller controller = mod.GetGroupController(refAttrib.groupName);
+                        if (!controller.GetItems().ContainsKey(reference))
+                        {
+                            reporter(new ItemReport_WrongReferenceField()
+                            {
+                                item = item,
+                                path = basePath,
+                                group = refAttrib.groupName,
+                                value = reference,
+                            });
+                        }
+                    }
+                }
+            }
+            else if (type.Name.Equals("List`1"))
+            {
+                Type storedType = type.GetGenericArguments()[0];
+                int index = 0;
+                foreach (var record in (source as IList))
+                {
+                    CheckDataImpl(reporter, item, basePath + "[" + index + "]", record, storedType, attributes);
+                }
+            }
+            else
+            {
+                foreach (var field in type.GetFields())
+                {
+                    int w = 0;
+                    if (field.Name.Equals("Parent"))
+                        w = 1;
+                    List<ModEditorAttribute> overridenAttribs = FieldEditorManager.GetAttributes(field, type);
+                    bool ignore = false;
+                    if (field.IsStatic)
+                        continue;
+                    foreach (ModEditorAttribute attr in overridenAttribs)
+                    {
+                        if(attr is IgnoreByEditor)
+                            ignore = true;
+                    }
+                    object value = field.GetValue(source);
+                   
+                    // dealing with container type
+                    if(ignore == false && value != null)
+                        CheckDataImpl(reporter, item, basePath + "." + field.Name, value, field.FieldType, overridenAttribs);                    
+                }
+            }
+        }
+
+        public override void CheckDataIntegrity(Action<ItemReport> reporter)
+        {
+            foreach (var record in localCache)
+            {
+                Target target = (Target)record.Value.target;
+                CheckDataImpl(reporter, record.Value, "", target, targetType, null);
             }
         }
 

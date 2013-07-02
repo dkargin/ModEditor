@@ -35,6 +35,7 @@
             // 
             this.ModContentsTree.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.ModContentsTree.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ModContentsTree.HideSelection = false;
             this.ModContentsTree.LabelEdit = true;
             this.ModContentsTree.Location = new System.Drawing.Point(0, 0);
             this.ModContentsTree.Name = "ModContentsTree";

@@ -29,6 +29,11 @@ namespace ModEditor
         //public Ship_Game.Game1 game;
         //public XNAWrap baseGame;
 
+        delegate bool AsyncMethod();
+
+        AsyncMethod asyncCheckData = null;
+        AsyncMethod asyncLoadData = null;
+
         Game baseGame;
 
         static MainForm mainForm;
@@ -40,8 +45,9 @@ namespace ModEditor
         private bool m_bSaveLayout = true;
         private DeserializeDockContent m_deserializeDockContent;
 
+        PanelReport panelReport = new PanelReport();
         PanelSolutionExplorer solutionExplorer;
-        PanelErrors panelErrors = new PanelErrors();
+        PanelErrors panelLog = new PanelErrors();
 
         List<PanelItemView> itemPanels = new List<PanelItemView>();
 
@@ -62,7 +68,7 @@ namespace ModEditor
             
             solutionExplorer.Show(workArea);
             
-            panelErrors.Show(workArea);            
+            panelLog.Show(workArea);
             
             ModContentsTree = solutionExplorer.ModContentsTree;
 
@@ -83,6 +89,15 @@ namespace ModEditor
             //string source = "Laser weapons factory. Provides production bonus ${Building.SoftAttack} per assigned colonist. Also can defend colony using its production directly from the assembly line, shooting orbital targets at range ${Weapon.Range}. Needs ${Building.Maintenance} maintance per turn.";
             //Ship_Game.Building building = new Ship_Game.Building();
             //Console.WriteLine(ModContents.EmbedToString(source, building));
+
+            UpdateMenus();
+        }
+
+        void UpdateMenus()
+        {
+            errorsToolStripMenuItem.Checked = (panelReport.VisibleState != DockState.Hidden);
+            logViewToolStripMenuItem.Checked = (this.panelLog.VisibleState != DockState.Hidden);
+            modExplorerToolStripMenuItem.Checked = (this.solutionExplorer.VisibleState != DockState.Hidden);
         }
 
         public enum EditorStatus
@@ -104,7 +119,7 @@ namespace ModEditor
         private IDockContent GetContentFromPersistString(string persistString)
         {
             if (persistString == typeof(PanelErrors).ToString())
-                return panelErrors;
+                return panelLog;
             else if (persistString == typeof(PanelSolutionExplorer).ToString())
                 return solutionExplorer;
                 /*
@@ -218,6 +233,9 @@ namespace ModEditor
 
         void LoadMod(string ModEntryPath)        
         {
+            if (this.asyncLoadData != null)
+                return;
+            
             Status = EditorStatus.Empty;            
             //UnloadMod();
             Status = EditorStatus.Loading;
@@ -386,7 +404,9 @@ namespace ModEditor
 
             if (item.node != null)
             {
-                item.node.TreeView.SelectedNode = item.node;
+                //item.node.TreeView.Focus();
+                item.node.EnsureVisible();
+                item.node.TreeView.SelectedNode = item.node;                
             }
         }
 
@@ -463,9 +483,59 @@ namespace ModEditor
             System.Diagnostics.Process.Start("StarDrive.exe");
         }
 
+        private void UpdateProgress(int value)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke((MethodInvoker)(() => { toolStripProgress.Value = value; }));
+            }
+            else
+            {
+                toolStripProgress.Value = value;
+            }
+        }
+
+        private void EnableProgress(bool value)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke((MethodInvoker)(() => { EnableProgress(value); }));
+            }
+            else
+            {
+                toolStripProgress.Visible = value;
+                if(value)
+                {
+                    toolStripProgress.Maximum = 100;
+                    toolStripProgress.Value = 0;
+                    toolStripProgress.Visible = true;
+                }
+            }
+        }
+
         private void checkDataToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            CheckExternalModifications();
+            if (contentsMod != null && contentsMod.state == ModContents.State.Loaded && this.asyncCheckData == null)
+            {
+                panelReport.ClearReport();
+                EnableProgress(true);
+
+                asyncCheckData = new AsyncMethod(() =>
+                {
+                    contentsMod.CheckDataIntegrity(panelReport.OnErrorFound, UpdateProgress);
+                    EnableProgress(false);
+                    return false;
+                });
+                asyncCheckData.BeginInvoke((IAsyncResult ar) => { this.asyncCheckData = null; }, null);
+                /*
+                contentsMod.CheckDataIntegrity(panelReport.OnErrorFound, UpdateProgress);
+                toolStripProgress.Visible = false;
+                //return false;*/
+            }
+            else
+            {
+                PanelErrors.LogErrorString("Mod data is not loaded");
+            }
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -480,9 +550,38 @@ namespace ModEditor
         private void MainForm_Load(object sender, EventArgs e)
         {
             string configFile = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "DockPanel.config");
-
+            /*
             if (File.Exists(configFile))
-                workArea.LoadFromXml(configFile, m_deserializeDockContent);
+                workArea.LoadFromXml(configFile, m_deserializeDockContent);*/
+        }
+
+        private void errorsToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            if (errorsToolStripMenuItem.Checked)
+                panelReport.Show(workArea);
+            else
+                panelReport.Hide();
+        }
+
+        private void logViewToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            if (logViewToolStripMenuItem.Checked)
+                panelLog.Show(workArea);
+            else
+                panelLog.Hide();
+        }
+
+        private void modExplorerToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            if (modExplorerToolStripMenuItem.Checked)
+                solutionExplorer.Show(workArea);
+            else
+                solutionExplorer.Hide();
+        }
+
+        private void checkExternalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CheckExternalModifications();
         }
     }
 }
