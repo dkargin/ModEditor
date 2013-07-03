@@ -270,6 +270,16 @@ namespace ModEditor
         {
             return null;
         }
+        // Returns true if value is valid
+        public virtual bool CheckValue(object value)
+        {
+            return true;
+        }
+
+        public virtual ItemReport GenerateReport(Item item, string path, object value)
+        {
+            return new ItemReport() { item = item, path = path };
+        }
     }
 
     public class IgnoreByEditor : ModEditorAttribute
@@ -277,6 +287,10 @@ namespace ModEditor
         public override TypeEditor GenerateEditor(ObjectAccessor item)
         {
             return null;
+        }
+        public override bool CheckValue(object value)
+        {
+            return true;
         }
     }
 
@@ -286,22 +300,57 @@ namespace ModEditor
         {
             return new FieldEditorLocString(item);
         }
+
+        public override bool CheckValue(object value)
+        {
+            int token = (int)Convert.ChangeType(value, typeof(int));
+            if (!StringsController.TokenExists(token))
+                return false;
+            return true;
+        }        
     }
     
     public class ObjectReference : ModEditorAttribute
     {
         public string groupName;
+        public string filter = "{0}";
         public bool allowEmpty;
-        public ObjectReference(string group, bool allowEmpty)
+
+        public ObjectReference(string group, string filter, bool allowEmpty)
         {
             this.groupName = group;
             this.allowEmpty = allowEmpty;
+            this.filter = filter;
         }
+
         public override TypeEditor GenerateEditor(ObjectAccessor item)
         {
             return new FieldEditorReference(item, groupName, allowEmpty);
         }
+
+        public override bool CheckValue(object value)
+        {
+            string reference = (string)value;
+            if ("".Equals(reference) && allowEmpty)
+                return true;
+            var controller = ModContents.GetMod().GetController(groupName);
+            if (controller == null || !controller.GetItems().ContainsKey(String.Format(filter, reference)))
+                return false;
+            return true;
+        }
+
+        public override ItemReport GenerateReport(Item item, string path, object value)
+        {
+            return new ItemReport_WrongReferenceField()
+            {
+                item = item,
+                path = path,
+                group = groupName,
+                value = String.Format("{0}->{1} by {2}",(string)value, String.Format(filter, (string)value), filter),
+            };
+        }
     }
+
     #endregion
 
     public class TypeEditor
@@ -981,8 +1030,8 @@ namespace ModEditor
             overrides.OverrideFieldObjectReference("PortraitPath", "Textures", true);
 
             overrides = GetFieldOverrides(typeof(Ship_Game.Gameplay.Weapon));
-            overrides.OverrideFieldObjectReference("BeamTexture", "Textures", false);
-            overrides.OverrideFieldObjectReference("ProjectileTexturePath", "Textures", false);
+            overrides.OverrideFieldObjectReference("BeamTexture", "Textures", "Beams/{0}", false);
+            //overrides.OverrideFieldObjectReference("ProjectileTexturePath", "Textures", false);
             overrides.IgnoreField("moduleAttachedTo");
             overrides.IgnoreField("owner");
             overrides.IgnoreField("drowner");
@@ -1006,9 +1055,11 @@ namespace ModEditor
             overrides = GetFieldOverrides(typeof(Ship_Game.Technology));
             overrides.OverrideFieldLocString("DescriptionIndex");
             overrides.OverrideFieldLocString("NameIndex");
+            overrides.OverrideFieldObjectReference("IconPath", TexturesGroup.Name, "ResearchMenu/{0}_hover", true);
 
             overrides = GetFieldOverrides(typeof(Ship_Game.Troop));
-            overrides.OverrideFieldObjectReference("TexturePath", "Textures", true);
+            overrides.OverrideFieldObjectReference("Icon", TexturesGroup.Name, "TroopIcons/{0}_icon", true);
+            overrides.OverrideFieldObjectReference("TexturePath", TexturesGroup.Name, "Troops/{0}", true);
 
             overrides = GetFieldOverrides(typeof(Ship_Game.Building));
             overrides.OverrideFieldLocString("NameTranslationIndex");
@@ -1032,6 +1083,7 @@ namespace ModEditor
             overrides.IgnoreField("Parent");
             overrides.IgnoreField("ParentOfDummy");
             overrides.OverrideFieldObjectReference("WeaponType", WeaponGroup.Name, false);
+            overrides.OverrideFieldObjectReference("IconTexturePath", TexturesGroup.Name, "{0}", true);
 
             overrides = GetFieldOverrides(typeof(Ship_Game.Outcome));
             overrides.OverrideFieldObjectReference("TroopsGranted", TroopSpec.Name, true);
@@ -1043,6 +1095,7 @@ namespace ModEditor
 
             overrides = GetFieldOverrides(typeof(Ship_Game.ShipData));
             overrides.IgnoreField("ThrusterList");
+            overrides.OverrideFieldObjectReference("IconPath", TexturesGroup.Name, "{0}", true);
 
             overrides = GetFieldOverrides(typeof(Ship_Game.Gameplay.Ship));
             overrides.IgnoreField("AreaOfOperation");

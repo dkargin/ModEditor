@@ -35,9 +35,14 @@ namespace ModEditor
         }
 
         // Mark field as "object reference"            
+        public void OverrideFieldObjectReference(string fieldName, string group, string filter, bool required)
+        {
+            AddAttribute(fieldName, new ObjectReference(group, filter, !required));
+        }
+
         public void OverrideFieldObjectReference(string fieldName, string group, bool required)
         {
-            AddAttribute(fieldName, new ObjectReference(group, !required));
+            AddAttribute(fieldName, new ObjectReference(group, "{0}", !required));
         }
 
         // Ignore field

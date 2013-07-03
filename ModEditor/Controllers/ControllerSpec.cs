@@ -52,39 +52,12 @@ namespace ModEditor.Controllers
                 // Dealing with primitive type
                 foreach (ModEditorAttribute attribute in attributes)
                 {
-                    if (attribute is LocStringToken)
-                    {                            
-                        int token = (int)Convert.ChangeType(source, typeof(int));
-                        if (!StringsController.TokenExists(token))
-                        {
-                            reporter(new ItemReport()
-                            {
-                                item = item,
-                                path = basePath,
-                            });
-                        }                           
+                    try{
+                    if(!attribute.CheckValue(source))
+                        reporter(attribute.GenerateReport(item, basePath, source));
                     }
-                    else if (attribute is ObjectReference)
+                    catch(Exception)
                     {
-                        ObjectReference refAttrib = (attribute as ObjectReference);
-                        string reference = (string)source;
-                        if ("".Equals(reference) && refAttrib.allowEmpty)
-                            continue;
-                        ModContents mod = ModContents.GetMod();
-                        if (mod == null)
-                            return;
-
-                        Controller controller = mod.GetGroupController(refAttrib.groupName);
-                        if (!controller.GetItems().ContainsKey(reference))
-                        {
-                            reporter(new ItemReport_WrongReferenceField()
-                            {
-                                item = item,
-                                path = basePath,
-                                group = refAttrib.groupName,
-                                value = reference,
-                            });
-                        }
                     }
                 }
             }
@@ -101,9 +74,6 @@ namespace ModEditor.Controllers
             {
                 foreach (var field in type.GetFields())
                 {
-                    int w = 0;
-                    if (field.Name.Equals("Parent"))
-                        w = 1;
                     List<ModEditorAttribute> overridenAttribs = FieldEditorManager.GetAttributes(field, type);
                     bool ignore = false;
                     if (field.IsStatic)
