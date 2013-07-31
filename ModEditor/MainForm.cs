@@ -49,7 +49,7 @@ namespace ModEditor
         PanelSolutionExplorer solutionExplorer;
         PanelErrors panelLog = new PanelErrors();
 
-        List<PanelItemView> itemPanels = new List<PanelItemView>();
+        //List<PanelItemContainer> itemPanels = new List<PanelItemContainer>();
 
         TreeView ModContentsTree;
          
@@ -185,6 +185,7 @@ namespace ModEditor
 
                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
+                    LoadBase();
                     contentsMod = ModContents.CreateNewMod(ModContentsTree, dialog.FileName, contentsBase);
                     contentsMod.UpdateUI();
                     contentsBase.UpdateUI();
@@ -219,7 +220,6 @@ namespace ModEditor
                     Ship_Game.ResourceManager.Initialize(baseGame.Content);
                     contentsBase.PopulateData(GetGamePath()+"Content", true);
                     PanelErrors.LogInfoString("Base data has been loaded");
-                    contentsBase.state = ModContents.State.Loaded;
                     // 2. Analyze contents
                     //modReady = true;
                 }
@@ -350,17 +350,17 @@ namespace ModEditor
             // Do your rendering stuff here...
             mDevice.Present();*/
         }
-
-        private PanelItemView FindTabByTag(Object tag)
+        /*
+        private PanelItemContainer FindTabByTag(Object tag)
         {
-            foreach (PanelItemView tab in this.itemPanels)
+            foreach (PanelItemContainer tab in this.itemPanels)
             {
                 if (tab.Tag == tag)
                     return tab;
             }
             return null;
         }
-
+        */
         static public void SelectItem(Item item)
         {
             if(mainForm != null)
@@ -368,6 +368,15 @@ namespace ModEditor
                 mainForm.ExploreItem(item);
             }
         }        
+
+        static public void OnPanelItemClosed(PanelItemContainer page)
+        {
+            if(mainForm != null)
+            {  
+                Item item = page.Item;
+                item.OnTabClosed();
+            }
+        }
 
         public void ExploreItem(ModEditor.Item item)
         {
@@ -379,14 +388,22 @@ namespace ModEditor
                     Control control = item.GenerateControl();
                     if (control != null)
                     {
-                        PanelItemView page = new PanelItemView()
+                        PanelItemContainer page = new PanelItemContainer()
                         {
                             Text = item.Name,
                             Tag = item,
                         };
-                        page.Init(item.controller.TargetType, item);
+
+                        page.AttachItem(item, control);
+                        /*
+                        ItemView page = new ItemView()
+                        {
+                            Text = item.Name,
+                            Tag = item,
+                        };
+                        page.Init(item.controller.TargetType, item);*/
                         item.page = page;
-                        itemPanels.Add(page);
+                        //itemPanels.Add(page);
                         page.Show(workArea);
                         page.Select();
                     }

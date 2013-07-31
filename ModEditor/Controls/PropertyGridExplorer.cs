@@ -27,7 +27,7 @@ namespace ModEditor.Controls
         public class Column
         {
             public Dictionary<string, TypeEditor> editors = new Dictionary<string, TypeEditor>();
-            object source;
+            //object source;
         }
         
         public Dictionary<string, TypeEditor> editors = new Dictionary<string, TypeEditor>();

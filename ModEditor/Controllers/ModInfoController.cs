@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -33,16 +34,42 @@ namespace ModEditor.Controllers
         {
             if (item.target == null)
                 return null;
-            PanelItemView explorer = new PanelItemView();
+            ItemView explorer = new ItemView();
             Ship_Game.ModInformation targetObj = (Ship_Game.ModInformation)item.target;
             explorer.Init(typeof(Ship_Game.ModInformation), item);
             return explorer;
         }
 
+        static string GetDirShortName(string path)
+        {
+            var separators = new char[] {
+              Path.DirectorySeparatorChar,  
+              Path.AltDirectorySeparatorChar  
+            };
+
+            string[] entries = null;
+            entries = path.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            /*
+            if (Directory.Exists(path))
+            {
+                
+            }
+            else if (File.Exists(path))
+            {
+                entries = Path.GetDirectoryName(path).Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            }
+            else
+            {
+                return "";
+            }*/
+            return entries[entries.Length - 1];
+        }
         public override void ObtainModData(string basePath, bool isBase)
         {
             this.isBase = isBase;
-            rootItem = new Item(null, this, isBase?"":basePath+".xml");
+            string entryPath = GetDirShortName(basePath);
+            rootItem = new Item(mod.modInfo, this, isBase ? "" : "../" + entryPath + ".xml");
+            rootItem.name = "Mod Info";
         }
 
         public override void PopulateModOverview(TreeNodeCollection root)
@@ -61,6 +88,11 @@ namespace ModEditor.Controllers
             groupNode.Tag = rootItem;
             rootItem.node = groupNode;
 
+        }
+
+        public override void CheckDataIntegrity(Action<ItemReport> reporter)
+        {
+            CheckDataImpl(reporter, rootItem, "", rootItem.target, targetType, null);
         }
 
         public override void SaveAll(string dir)

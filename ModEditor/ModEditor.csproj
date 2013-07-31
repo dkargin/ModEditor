@@ -86,6 +86,12 @@
     <Compile Include="Controls\PanelErrors.Designer.cs">
       <DependentUpon>PanelErrors.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\PanelItemContainer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\PanelItemContainer.Designer.cs">
+      <DependentUpon>PanelItemContainer.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\PanelReport.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -162,11 +168,11 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="XNATool\GraphicsDeviceService.cs" />
-    <Compile Include="Controls\PanelItemView.cs">
-      <SubType>Form</SubType>
+    <Compile Include="Controls\ItemView.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\PanelItemView.Designer.cs">
-      <DependentUpon>PanelItemView.cs</DependentUpon>
+    <Compile Include="Controls\ItemView.Designer.cs">
+      <DependentUpon>ItemView.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -185,6 +191,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\PanelErrors.resx">
       <DependentUpon>PanelErrors.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PanelItemContainer.resx">
+      <DependentUpon>PanelItemContainer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\PanelReport.resx">
       <DependentUpon>PanelReport.cs</DependentUpon>
@@ -213,8 +222,8 @@
     <EmbeddedResource Include="FormAbout.resx">
       <DependentUpon>FormAbout.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\PanelItemView.resx">
-      <DependentUpon>PanelItemView.cs</DependentUpon>
+    <EmbeddedResource Include="Controls\ItemView.resx">
+      <DependentUpon>ItemView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormSimpleEditContainer.resx">
       <DependentUpon>FormSimpleEditContainer.cs</DependentUpon>

@@ -194,10 +194,11 @@ namespace ModEditor.Controllers
         private void OnNewItem(object sender, EventArgs e)
         {
         }
+        
         private BindingSource bindingSource = new BindingSource();
+
         public override Control GenerateControl(ModEditor.Item item)
         {
-
             DataGridView result = new DataGridView();
             //result.DataSource = bindingSource;
             result.DataSource = localStrings;           

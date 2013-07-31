@@ -1,7 +1,7 @@
 ﻿using ModEditor.Controls;
 namespace ModEditor
 {
-    partial class PanelItemView
+    partial class ItemView
     {
 
         #region Component Designer generated code

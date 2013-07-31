@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using ModEditor.Controls;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -33,7 +34,7 @@ namespace ModEditor
         protected string sourcePath = "";
 
         public TreeNode node;           // Assigned tree node
-        public PanelItemView page;            // Assigned tab page
+        public PanelItemContainer page;            // Assigned tab page
 
         public DateTime fileTime;       // Cached time to check if file was modified
 
@@ -190,7 +191,7 @@ namespace ModEditor
             return Prev != null || Next != null;
         }
 
-        public PanelItemView GetTabPage()
+        public PanelItemContainer GetTabPage()
         {
             return page;
         }
@@ -281,10 +282,60 @@ namespace ModEditor
                 return null;
             if (targetType == null)
                 return null;
-            PanelItemView explorer = new PanelItemView();
+            ItemView explorer = new ItemView();
             explorer.Init(targetType, item);
             return explorer;
         }
+
+        // Check item contents
+        public static void CheckDataImpl(Action<ItemReport> reporter, Item item, string basePath, object source, Type type, List<ModEditorAttribute> attributes)
+        {
+            if (FieldEditorManager.IsPrimitiveType(type))
+            {
+                // Dealing with primitive type
+                foreach (ModEditorAttribute attribute in attributes)
+                {
+                    try
+                    {
+                        if (!attribute.CheckValue(source))
+                            reporter(attribute.GenerateReport(item, basePath, source));
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+            else if (type.Name.Equals("List`1"))
+            {
+                Type storedType = type.GetGenericArguments()[0];
+                int index = 0;
+                foreach (var record in (source as IList))
+                {
+                    CheckDataImpl(reporter, item, basePath + "[" + index + "]", record, storedType, attributes);
+                }
+            }
+            else
+            {
+                foreach (var field in type.GetFields())
+                {
+                    List<ModEditorAttribute> overridenAttribs = FieldEditorManager.GetAttributes(field, type);
+                    bool ignore = false;
+                    if (field.IsStatic)
+                        continue;
+                    foreach (ModEditorAttribute attr in overridenAttribs)
+                    {
+                        if (attr is IgnoreByEditor)
+                            ignore = true;
+                    }
+                    object value = field.GetValue(source);
+
+                    // dealing with container type
+                    if (ignore == false && value != null)
+                        CheckDataImpl(reporter, item, basePath + "." + field.Name, value, field.FieldType, overridenAttribs);
+                }
+            }
+        }
+
 
         public virtual void CheckDataIntegrity(Action<ItemReport> data)
         {
@@ -411,17 +462,29 @@ namespace ModEditor
              */
         }
 
-        public static ModContents CreateNewMod(TreeView treeView, string modPath, ModContents baseMod)
+        // Create new mod from specified XML entry and base mod data
+        public static ModContents CreateNewMod(TreeView treeView, string modXMLPath, ModContents baseMod)
         {
-            ModContents result = new ModContents(treeView, baseMod);
-            result.modRootPath = modPath;
-            result.modInfo = new Ship_Game.ModInformation()
+            string modRootPath = Path.GetDirectoryName(modXMLPath) + "/" + Path.GetFileNameWithoutExtension(modXMLPath);
+            try
             {
-                ModName = Path.GetFileNameWithoutExtension(modPath)
-            };
-            result.UpdateModInfo();
-            result.PopulateData(result.modRootPath, false);
-            return result;
+                ModContents result = new ModContents(treeView, baseMod);
+                result.modRootPath = modRootPath;
+                result.modInfo = new Ship_Game.ModInformation()
+                {
+                    ModName = Path.GetFileNameWithoutExtension(modXMLPath)
+                };
+                result.UpdateModInfo();
+                result.PopulateData(result.modRootPath, false);
+                return result;
+            }
+            catch (Exception e)
+            {
+                PanelErrors.LogErrorString(e.Message);
+                
+            }
+            return null;
+            
         }
         
         static public ModContents GetMod()
@@ -631,7 +694,9 @@ namespace ModEditor
             {
                 controller.Value.ObtainModData(basePath, isBase);
                 controller.Value.PopulateModOverview(rootTreeNode.Nodes);
-            }                                  
+            }
+
+            state = ModContents.State.Loaded;
         }
 
         public void UpdateUI()

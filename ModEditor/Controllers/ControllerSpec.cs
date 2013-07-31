@@ -43,54 +43,7 @@ namespace ModEditor.Controllers
             {
                 record.Value.RaiseDataChanged();
             }
-        }
-
-        void CheckDataImpl(Action<ItemReport> reporter, Item item, string basePath, object source, Type type, List<ModEditorAttribute> attributes)
-        {       
-            if (FieldEditorManager.IsPrimitiveType(type))
-            {
-                // Dealing with primitive type
-                foreach (ModEditorAttribute attribute in attributes)
-                {
-                    try{
-                    if(!attribute.CheckValue(source))
-                        reporter(attribute.GenerateReport(item, basePath, source));
-                    }
-                    catch(Exception)
-                    {
-                    }
-                }
-            }
-            else if (type.Name.Equals("List`1"))
-            {
-                Type storedType = type.GetGenericArguments()[0];
-                int index = 0;
-                foreach (var record in (source as IList))
-                {
-                    CheckDataImpl(reporter, item, basePath + "[" + index + "]", record, storedType, attributes);
-                }
-            }
-            else
-            {
-                foreach (var field in type.GetFields())
-                {
-                    List<ModEditorAttribute> overridenAttribs = FieldEditorManager.GetAttributes(field, type);
-                    bool ignore = false;
-                    if (field.IsStatic)
-                        continue;
-                    foreach (ModEditorAttribute attr in overridenAttribs)
-                    {
-                        if(attr is IgnoreByEditor)
-                            ignore = true;
-                    }
-                    object value = field.GetValue(source);
-                   
-                    // dealing with container type
-                    if(ignore == false && value != null)
-                        CheckDataImpl(reporter, item, basePath + "." + field.Name, value, field.FieldType, overridenAttribs);                    
-                }
-            }
-        }
+        }        
 
         public override void CheckDataIntegrity(Action<ItemReport> reporter)
         {

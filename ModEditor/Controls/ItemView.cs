@@ -10,9 +10,9 @@ using ModEditor.Controls;
 
 namespace ModEditor
 {
-    public partial class PanelItemView : WeifenLuo.WinFormsUI.Docking.DockContent
+    public partial class ItemView : UserControl//WeifenLuo.WinFormsUI.Docking.DockContent
     {       
-        public PanelItemView()
+        public ItemView()
         {
             InitializeComponent();
         }
