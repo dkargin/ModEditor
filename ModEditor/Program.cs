@@ -13,11 +13,20 @@ namespace ModEditor
         /// </summary>
         [STAThread]
         static void Main()
-        {           
+        {
             Application.SetCompatibleTextRenderingDefault(false);
             MainForm mainForm = new MainForm();
             XNAWrap baseGame = new XNAWrap();
-            Ship_Game.GlobalStats.Config = new Ship_Game.Config();
+            //Ship_Game.GlobalStats = new Ship_Game.GlobalStats();
+            try
+            {
+                Ship_Game.GlobalStats.Config = new Ship_Game.Config();
+            }
+            catch (Exception e)
+            {
+                /// Nothing serious should be here.
+            }
+
             baseGame.Content.RootDirectory = "Content";
             Ship_Game.ResourceManager.localContentManager = baseGame.Content;
             mainForm.InitXNA(baseGame, baseGame.graphics);

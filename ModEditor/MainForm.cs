@@ -72,11 +72,13 @@ namespace ModEditor
             
             ModContentsTree = solutionExplorer.ModContentsTree;
 
+            contentsBase = new ModContents(ModContentsTree, null);
+            contentsBase.SetName("Base");
+
             try
             {
-
-                contentsBase = new ModContents(ModContentsTree, null);
-                contentsBase.SetName("Base");
+                contentsBase.InitControllers();
+                
                 PanelErrors.LogInfoString("Startup is complete");
             }
             catch (Exception ex)
@@ -187,6 +189,7 @@ namespace ModEditor
                 {
                     LoadBase();
                     contentsMod = ModContents.CreateNewMod(ModContentsTree, dialog.FileName, contentsBase);
+                    contentsMod.InitControllers();
                     contentsMod.UpdateUI();
                     contentsBase.UpdateUI();
                 }

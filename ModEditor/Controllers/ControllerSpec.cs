@@ -9,6 +9,8 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
 
+using Ship_Game.Gameplay;
+
 namespace ModEditor.Controllers
 {
     public abstract class ControllerSpec<Target> : ModEditor.Controller

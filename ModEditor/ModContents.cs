@@ -454,7 +454,7 @@ namespace ModEditor
 
             lastMod = this;
 
-            InitControllers();
+            //InitControllers();
             /*             
              	Races
 	            Encounters 
@@ -492,7 +492,7 @@ namespace ModEditor
             return lastMod;
         }
 
-        void InitControllers()
+        public void InitControllers()
         {
             modInfoController = new ModEditor.Controllers.ModInfoController(this);
             stringsController = new ModEditor.Controllers.StringsController(this);
@@ -505,7 +505,7 @@ namespace ModEditor
             AddController(new ModEditor.Controllers.TexturesGroup(this));
             AddController(new ModEditor.Controllers.TroopSpec(this));
             AddController(new ModEditor.Controllers.WeaponGroup(this));
-            AddController(new ModEditor.Controllers.ShipsGroup(this));
+           
             AddController(new ModEditor.Controllers.RacesGroup(this));
 
             AddController(new ModEditor.Controllers.DiplomacyDialogGroup(this));
@@ -514,6 +514,8 @@ namespace ModEditor
 
             AddController(modInfoController);
             AddController(stringsController);
+
+            AddController(new ModEditor.Controllers.ShipsGroup(this));
         }
 
         public void CheckDataIntegrity(Action<ItemReport> reporter, Action<int> progress)
