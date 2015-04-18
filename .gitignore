@@ -1,10 +1,2 @@
 
-/bin
-/obj
-/ModEditor/bin
-/ModEditor/obj
-/Ship_Game.Screens
-/Ship_Game.Gameplay
-/Ship_Game
-/Particle3DSample
 *.user
