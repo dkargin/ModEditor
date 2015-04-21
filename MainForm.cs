@@ -72,13 +72,10 @@ namespace ModEditor
             
             ModContentsTree = solutionExplorer.ModContentsTree;
 
-            contentsBase = new ModContents(ModContentsTree, null);
-            contentsBase.SetName("Base");
-
             try
             {
-                contentsBase.InitControllers();
-                
+				contentsBase = new ModContents(ModContentsTree, null);
+				contentsBase.SetName("Base");
                 PanelErrors.LogInfoString("Startup is complete");
             }
             catch (Exception ex)
@@ -189,8 +186,10 @@ namespace ModEditor
                 {
                     LoadBase();
                     contentsMod = ModContents.CreateNewMod(ModContentsTree, dialog.FileName, contentsBase);
-                    contentsMod.InitControllers();
-                    contentsMod.UpdateUI();
+					if (contentsMod != null)
+					{
+						contentsMod.UpdateUI();
+					}
                     contentsBase.UpdateUI();
                 }
             }
@@ -220,6 +219,7 @@ namespace ModEditor
                 try
                 {
                     // 1. Load contents
+					Ship_Game.ResourceManager.ignoreLoadingErrors = true;
                     Ship_Game.ResourceManager.Initialize(baseGame.Content);
                     contentsBase.PopulateData(GetGamePath()+"Content", true);
                     PanelErrors.LogInfoString("Base data has been loaded");
@@ -444,12 +444,7 @@ namespace ModEditor
         {
             LoadBase();
         }
-
-        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
-        }
-
+		
         private void newModToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CreateMod();

@@ -454,7 +454,7 @@ namespace ModEditor
 
             lastMod = this;
 
-            //InitControllers();
+            InitControllers();
             /*             
              	Races
 	            Encounters 
@@ -484,7 +484,6 @@ namespace ModEditor
                 
             }
             return null;
-            
         }
         
         static public ModContents GetMod()
@@ -492,7 +491,7 @@ namespace ModEditor
             return lastMod;
         }
 
-        public void InitControllers()
+        void InitControllers()
         {
             modInfoController = new ModEditor.Controllers.ModInfoController(this);
             stringsController = new ModEditor.Controllers.StringsController(this);
@@ -514,8 +513,8 @@ namespace ModEditor
 
             AddController(modInfoController);
             AddController(stringsController);
-
-            AddController(new ModEditor.Controllers.ShipsGroup(this));
+			/// Ship group controller does not work
+            //AddController(new ModEditor.Controllers.ShipsGroup(this));
         }
 
         public void CheckDataIntegrity(Action<ItemReport> reporter, Action<int> progress)
